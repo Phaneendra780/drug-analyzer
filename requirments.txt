@@ -1,6 +1,7 @@
 streamlit
 openai
-phi
+phidata
+google-generativeai
 tavily-python
 pandas
-pip install phidata google-generativeai tavily-python
+
