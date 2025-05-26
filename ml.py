@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from PIL import Image
 from io import BytesIO
-from phidata.agent import Agent
+from phi.agent import Agent
 from phi.model.google import Gemini
 from phi.tools.tavily import TavilyTools
 from tempfile import NamedTemporaryFile
