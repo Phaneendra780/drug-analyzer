@@ -1,6 +1,4 @@
 streamlit
 openai
-phidata
-google-generativeai
-tavily-python
+phidata google-generativeai tavily-python
 pandas
