@@ -418,27 +418,27 @@ def main():
                 st.markdown('<div class="centered-image">', unsafe_allow_html=True)
                 st.image(resized_image, caption="Uploaded Image", width=MAX_IMAGE_WIDTH)
                 st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Always show the analyze button when file is uploaded, regardless of image resize success
+            if st.button("🔍 Analyze Tablet", key="analyze_btn"):
+                st.session_state.analyze_clicked = True
                 
-                # Analyze button
-                if st.button("🔍 Analyze Tablet", key="analyze_btn"):
-                    st.session_state.analyze_clicked = True
-                    
-                    # Save uploaded file and analyze
-                    temp_path = save_uploaded_file(uploaded_file)
-                    if temp_path:
-                        try:
-                            extracted_info = extract_composition_and_details(temp_path)
-                            
-                            # Store results in session state
-                            st.session_state.analysis_results = extracted_info
-                            st.session_state.original_image = uploaded_file.getvalue()
-                            
-                        except Exception as e:
-                            st.error(f"Analysis failed: {e}")
-                        finally:
-                            # Clean up temp file
-                            if os.path.exists(temp_path):
-                                os.unlink(temp_path)
+                # Save uploaded file and analyze
+                temp_path = save_uploaded_file(uploaded_file)
+                if temp_path:
+                    try:
+                        extracted_info = extract_composition_and_details(temp_path)
+                        
+                        # Store results in session state
+                        st.session_state.analysis_results = extracted_info
+                        st.session_state.original_image = uploaded_file.getvalue()
+                        
+                    except Exception as e:
+                        st.error(f"Analysis failed: {e}")
+                    finally:
+                        # Clean up temp file
+                        if os.path.exists(temp_path):
+                            os.unlink(temp_path)
         else:
             st.markdown("""
             <div style="text-align: center; color: #6B7280; margin-top: 2rem;">
