@@ -25,14 +25,6 @@ st.set_page_config(
     page_icon="💊"
 )
 
-# Initialize session state for usage tracking
-if 'usage_count' not in st.session_state:
-    st.session_state.usage_count = 0
-
-# Constants
-MAX_FREE_USES = 5
-MAX_IMAGE_WIDTH = 300
-
 # Custom CSS for better styling
 st.markdown("""
 <style>
@@ -93,24 +85,6 @@ st.markdown("""
         margin: 1rem 0;
         color: #DC2626;
     }
-    .limit-box {
-        background-color: #FEF3C7;
-        border: 2px solid #F59E0B;
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        text-align: center;
-    }
-    .usage-counter {
-        background-color: #EEF2FF;
-        border: 1px solid #C7D2FE;
-        border-radius: 8px;
-        padding: 0.75rem;
-        margin: 1rem 0;
-        text-align: center;
-        color: #3730A3;
-        font-weight: 600;
-    }
     .stButton>button {
         background-color: #1E3A8A;
         color: white;
@@ -122,11 +96,6 @@ st.markdown("""
     .stButton>button:hover {
         background-color: #1E40AF;
     }
-    .stButton>button:disabled {
-        background-color: #9CA3AF !important;
-        color: #6B7280 !important;
-        cursor: not-allowed !important;
-    }
     .upload-section {
         border: 2px dashed #CBD5E1;
         border-radius: 10px;
@@ -134,15 +103,6 @@ st.markdown("""
         text-align: center;
         margin-bottom: 2rem;
         background-color: #F8FAFC;
-    }
-    .upload-section-disabled {
-        border: 2px dashed #D1D5DB;
-        border-radius: 10px;
-        padding: 2rem;
-        text-align: center;
-        margin-bottom: 2rem;
-        background-color: #F3F4F6;
-        opacity: 0.6;
     }
     .info-label {
         font-weight: 600;
@@ -186,35 +146,10 @@ st.markdown("""
     .download-btn:hover {
         background-color: #065F46 !important;
     }
-    .trial-expired {
-        background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
-        border: 2px solid #F87171;
-        border-radius: 15px;
-        padding: 2rem;
-        text-align: center;
-        margin: 2rem 0;
-        box-shadow: 0 8px 25px rgba(248, 113, 113, 0.2);
-    }
-    .trial-expired h2 {
-        color: #DC2626;
-        font-size: 1.8rem;
-        margin-bottom: 1rem;
-        font-weight: 700;
-    }
-    .trial-expired p {
-        color: #7F1D1D;
-        font-size: 1.1rem;
-        margin-bottom: 1.5rem;
-    }
-    .contact-info {
-        background-color: #FEF2F2;
-        border: 1px solid #FECACA;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-top: 1rem;
-    }
 </style>
 """, unsafe_allow_html=True)
+
+MAX_IMAGE_WIDTH = 300
 
 SYSTEM_PROMPT = """
 You are an expert in pharmaceutical analysis and AI-driven drug composition recognition.
@@ -234,58 +169,6 @@ INSTRUCTIONS = """
   *Side Effects:* <verified side effects>
   *Cost:* <actual cost from trusted sources>
 """
-
-def check_usage_limit():
-    """Check if user has exceeded the free usage limit."""
-    return st.session_state.usage_count >= MAX_FREE_USES
-
-def increment_usage():
-    """Increment the usage counter."""
-    st.session_state.usage_count += 1
-
-def display_usage_counter():
-    """Display the current usage counter."""
-    remaining = MAX_FREE_USES - st.session_state.usage_count
-    if remaining > 0:
-        st.markdown(f"""
-        <div class="usage-counter">
-            🆓 Free Trial: {remaining} of {MAX_FREE_USES} analyses remaining
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-        <div class="usage-counter" style="background-color: #FEE2E2; border-color: #FECACA; color: #DC2626;">
-            ❌ Free Trial Expired: {st.session_state.usage_count} of {MAX_FREE_USES} analyses used
-        </div>
-        """, unsafe_allow_html=True)
-
-def display_trial_expired_message():
-    """Display trial expired message with contact information."""
-    st.markdown("""
-    <div class="trial-expired">
-        <h2>🚫 Free Trial Expired</h2>
-        <p>You've reached your limit of 5 free tablet analyses!</p>
-        <p>Thank you for trying our Drug Composition Analyzer. To continue using this service, please contact us for premium access.</p>
-        
-        <div class="contact-info">
-            <h3 style="color: #DC2626; margin-bottom: 0.5rem;">📞 Contact Us for Premium Access</h3>
-            <p style="margin: 0.25rem 0;"><strong>Email:</strong> support@druganalyzer.com</p>
-            <p style="margin: 0.25rem 0;"><strong>Phone:</strong> +1 (555) 123-4567</p>
-            <p style="margin: 0.25rem 0;"><strong>Website:</strong> www.druganalyzer.com</p>
-        </div>
-        
-        <div style="margin-top: 1.5rem; padding: 1rem; background-color: #FEF9C3; border-radius: 8px; border: 1px solid #FDE047;">
-            <h4 style="color: #92400E; margin-bottom: 0.5rem;">✨ Premium Features Include:</h4>
-            <ul style="color: #92400E; text-align: left; display: inline-block;">
-                <li>Unlimited tablet analyses</li>
-                <li>Advanced drug interaction checker</li>
-                <li>Detailed PDF reports</li>
-                <li>Priority customer support</li>
-                <li>API access for developers</li>
-            </ul>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
 
 def check_api_keys():
     """Check if API keys are properly configured via Streamlit secrets."""
@@ -557,14 +440,6 @@ def main():
         </div>
         """, unsafe_allow_html=True)
     
-    # Display usage counter
-    display_usage_counter()
-    
-    # Check if trial has expired
-    if check_usage_limit():
-        display_trial_expired_message()
-        st.stop()
-    
     # Disclaimer
     st.markdown("""
     <div class="disclaimer-box">
@@ -603,7 +478,7 @@ def main():
                 st.image(resized_image, caption="Uploaded Image", width=MAX_IMAGE_WIDTH)
                 st.markdown('</div>', unsafe_allow_html=True)
                 
-                analyze_button = st.button("🔍 Analyze Tablet", key="analyze_btn")
+                analyze_button = st.button("🔍 Analyze Tablet")
         else:
             st.markdown("""
             <div style="text-align: center; color: #6B7280; margin-top: 2rem;">
@@ -622,9 +497,6 @@ def main():
         st.markdown('<div class="dark-tagline">🔍 Accurate medication details in seconds!</div>', unsafe_allow_html=True)
         
         if uploaded_file and 'analyze_button' in locals() and analyze_button:
-            # Increment usage counter
-            increment_usage()
-            
             # Process the image directly without saving to disk
             extracted_info = extract_composition_and_details(uploaded_file)
             
@@ -665,23 +537,6 @@ def main():
                         help="Download a PDF report with analysis results",
                     )
                     st.markdown("</div>", unsafe_allow_html=True)
-                
-                # Show updated usage counter and warning if approaching limit
-                remaining = MAX_FREE_USES - st.session_state.usage_count
-                if remaining == 1:
-                    st.markdown("""
-                    <div class="warning-box">
-                        <strong>⚠️ Last Free Analysis!</strong><br>
-                        This was your last free tablet analysis. Contact us for premium access to continue using the service.
-                    </div>
-                    """, unsafe_allow_html=True)
-                elif remaining == 0:
-                    st.markdown("""
-                    <div class="error-box">
-                        <strong>🚫 Free Trial Completed!</strong><br>
-                        You've used all your free analyses. Refresh the page to see upgrade options.
-                    </div>
-                    """, unsafe_allow_html=True)
         else:
             st.markdown("""
             <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 400px; text-align: center;">
