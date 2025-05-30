@@ -141,10 +141,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# API Keys
-tavily_key = st.secrets.get("TAVILY_API_KEY")
-google_key = st.secrets.get("GOOGLE_API_KEY")
+# API Keys - Fixed variable name consistency
+TAVILY_API_KEY = st.secrets.get("TAVILY_API_KEY")
+GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY")
 
+# Check if API keys are available
 if not TAVILY_API_KEY or not GOOGLE_API_KEY:
     st.error("API keys are missing. Please check your configuration.")
     st.stop()
@@ -188,8 +189,12 @@ def get_agent():
 def resize_image_for_display(image_file):
     """Resize image for display only, returns bytes."""
     try:
-        img = Image.open(image_file)
+        # Reset file pointer to beginning
         image_file.seek(0)
+        img = Image.open(image_file)
+        # Reset again for later use
+        image_file.seek(0)
+        
         aspect_ratio = img.height / img.width
         new_height = int(MAX_IMAGE_WIDTH * aspect_ratio)
         img = img.resize((MAX_IMAGE_WIDTH, new_height), Image.Resampling.LANCZOS)
@@ -220,7 +225,10 @@ def extract_composition_and_details(image_path):
 def save_uploaded_file(uploaded_file):
     """Save the uploaded file to disk."""
     try:
-        with NamedTemporaryFile(delete=False, suffix=f"_{uploaded_file.name}") as temp_file:
+        # Get file extension from the uploaded file name
+        file_extension = os.path.splitext(uploaded_file.name)[1]
+        
+        with NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
             temp_file.write(uploaded_file.getvalue())
             temp_path = temp_file.name
         return temp_path
@@ -274,7 +282,6 @@ def create_pdf(image_data, analysis_results):
             borderWidth=1,
             borderColor=colors.red,
             borderPadding=5,
-            borderRadius=5,
             backColor=colors.pink,
             alignment=1
         )
@@ -298,36 +305,49 @@ def create_pdf(image_data, analysis_results):
         
         # Add image if available
         if image_data:
-            img_temp = BytesIO(image_data)
-            img = Image.open(img_temp)
-            img_width, img_height = img.size
-            aspect = img_height / float(img_width)
-            display_width = 4 * inch
-            display_height = display_width * aspect
-            img_obj = ReportLabImage(img_temp, width=display_width, height=display_height)
-            content.append(Paragraph("Analyzed Image:", heading_style))
-            content.append(img_obj)
-            content.append(Spacer(1, 0.25*inch))
+            try:
+                img_temp = BytesIO(image_data)
+                img = Image.open(img_temp)
+                img_width, img_height = img.size
+                aspect = img_height / float(img_width)
+                display_width = 4 * inch
+                display_height = display_width * aspect
+                
+                # Reset BytesIO position for ReportLab
+                img_temp.seek(0)
+                img_obj = ReportLabImage(img_temp, width=display_width, height=display_height)
+                content.append(Paragraph("Analyzed Image:", heading_style))
+                content.append(img_obj)
+                content.append(Spacer(1, 0.25*inch))
+            except Exception as img_error:
+                st.warning(f"Could not add image to PDF: {img_error}")
         
         # Analysis results
         content.append(Paragraph("Analysis Results:", heading_style))
         
-        # Format the analysis results for PDF - fixed version using regex
+        # Format the analysis results for PDF
         if analysis_results:
             # Use regex to find sections in the format "*SectionName:* Content"
             section_pattern = r"\*([\w\s]+):\*(.*?)(?=\*[\w\s]+:\*|$)"
-            matches = re.findall(section_pattern, analysis_results, re.DOTALL)
+            matches = re.findall(section_pattern, analysis_results, re.DOTALL | re.IGNORECASE)
             
-            for section_title, section_content in matches:
-                content.append(Paragraph(f"<b>{section_title}:</b>", normal_style))
-                
-                # Handle multiline content
-                paragraphs = section_content.strip().split("\n")
-                for para in paragraphs:
-                    if para.strip():
-                        content.append(Paragraph(para.strip(), normal_style))
-                
-                content.append(Spacer(1, 0.15*inch))
+            if matches:
+                for section_title, section_content in matches:
+                    content.append(Paragraph(f"<b>{section_title.strip()}:</b>", normal_style))
+                    
+                    # Handle multiline content
+                    paragraphs = section_content.strip().split("\n")
+                    for para in paragraphs:
+                        if para.strip():
+                            # Escape HTML characters for ReportLab
+                            clean_para = para.strip().replace('<', '&lt;').replace('>', '&gt;')
+                            content.append(Paragraph(clean_para, normal_style))
+                    
+                    content.append(Spacer(1, 0.15*inch))
+            else:
+                # Fallback: add the entire analysis as-is if regex doesn't match
+                clean_results = analysis_results.replace('<', '&lt;').replace('>', '&gt;')
+                content.append(Paragraph(clean_results, normal_style))
         
         # Footer
         content.append(Spacer(1, 0.5*inch))
@@ -344,13 +364,15 @@ def create_pdf(image_data, analysis_results):
         st.error(f"Error creating PDF: {e}")
         return None
 
-def get_pdf_download_link(pdf_bytes, filename="drug_analysis_report.pdf"):
-    """Generate a download link for the PDF file."""
-    b64 = base64.b64encode(pdf_bytes).decode()
-    href = f'<a href="data:application/pdf;base64,{b64}" download="{filename}" class="download-link">Download PDF Report</a>'
-    return href
-
 def main():
+    # Initialize session state for button tracking
+    if 'analyze_clicked' not in st.session_state:
+        st.session_state.analyze_clicked = False
+    if 'analysis_results' not in st.session_state:
+        st.session_state.analysis_results = None
+    if 'original_image' not in st.session_state:
+        st.session_state.original_image = None
+
     # Header with logo
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -361,14 +383,14 @@ def main():
         </div>
         """, unsafe_allow_html=True)
     
-    # Compact disclaimer with no extra whitespace
+    # Compact disclaimer
     st.markdown("""
     <div class="disclaimer-box" style="margin-top: 0; margin-bottom: 1rem;">
         <div style="display: flex; align-items: flex-start;">
             <span style="font-size: 1.3rem; margin-right: 0.5rem; margin-top: 0.1rem;">⚠️</span>
             <div>
                 <div style="font-weight: 600; margin-bottom: 0.25rem;">MEDICAL DISCLAIMER</div>
-                <div style="font-size: 0.9rem; line-height: 1.4;">The information provided by this application is for educational purposes only and is not intended to replace professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition or medication. Never disregard professional medical advice or delay in seeking it because of something you have read on this application.</div>
+                <div style="font-size: 0.9rem; line-height: 1.4;">The information provided by this application is for educational purposes only and is not intended to replace professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition or medication.</div>
             </div>
         </div>
     </div>
@@ -397,7 +419,26 @@ def main():
                 st.image(resized_image, caption="Uploaded Image", width=MAX_IMAGE_WIDTH)
                 st.markdown('</div>', unsafe_allow_html=True)
                 
-                analyze_button = st.button("🔍 Analyze Tablet")
+                # Analyze button
+                if st.button("🔍 Analyze Tablet", key="analyze_btn"):
+                    st.session_state.analyze_clicked = True
+                    
+                    # Save uploaded file and analyze
+                    temp_path = save_uploaded_file(uploaded_file)
+                    if temp_path:
+                        try:
+                            extracted_info = extract_composition_and_details(temp_path)
+                            
+                            # Store results in session state
+                            st.session_state.analysis_results = extracted_info
+                            st.session_state.original_image = uploaded_file.getvalue()
+                            
+                        except Exception as e:
+                            st.error(f"Analysis failed: {e}")
+                        finally:
+                            # Clean up temp file
+                            if os.path.exists(temp_path):
+                                os.unlink(temp_path)
         else:
             st.markdown("""
             <div style="text-align: center; color: #6B7280; margin-top: 2rem;">
@@ -415,48 +456,41 @@ def main():
         # Tagline above the results section
         st.markdown('<div class="dark-tagline">🔍 Accurate medication details in seconds!</div>', unsafe_allow_html=True)
         
-        if uploaded_file and 'analyze_button' in locals() and analyze_button:
-            temp_path = save_uploaded_file(uploaded_file)
-            if temp_path:
-                extracted_info = extract_composition_and_details(temp_path)
-                os.unlink(temp_path)  # Clean up
-
-                # Store original image for PDF
-                original_image = uploaded_file.getvalue()
-
-                if extracted_info:
-                    st.markdown('<div class="card">', unsafe_allow_html=True)
-                    st.markdown('<div class="subheader">Analysis Results</div>', unsafe_allow_html=True)
-                    
-                    # Format the extracted information with better styling
-                    formatted_info = extracted_info.replace(
-                        "*Composition:*", "<div class='info-label'>Composition:</div>"
-                    ).replace(
-                        "*Uses:*", "<div class='info-label'>Uses:</div>"
-                    ).replace(
-                        "*Side Effects:*", "<div class='info-label'>Side Effects:</div>"
-                    ).replace(
-                        "*Cost:*", "<div class='info-label'>Cost:</div>"
+        # Display results if available
+        if st.session_state.analysis_results:
+            st.markdown('<div class="card">', unsafe_allow_html=True)
+            st.markdown('<div class="subheader">Analysis Results</div>', unsafe_allow_html=True)
+            
+            # Format the extracted information with better styling
+            formatted_info = st.session_state.analysis_results.replace(
+                "*Composition:*", "<div class='info-label'>Composition:</div>"
+            ).replace(
+                "*Uses:*", "<div class='info-label'>Uses:</div>"
+            ).replace(
+                "*Side Effects:*", "<div class='info-label'>Side Effects:</div>"
+            ).replace(
+                "*Cost:*", "<div class='info-label'>Cost:</div>"
+            )
+            
+            st.markdown(formatted_info, unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Create PDF report
+            if st.session_state.original_image:
+                pdf_bytes = create_pdf(st.session_state.original_image, st.session_state.analysis_results)
+                if pdf_bytes:
+                    st.markdown("<div style='text-align: center; margin-top: 1rem;'>", unsafe_allow_html=True)
+                    download_filename = f"drug_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                    st.download_button(
+                        label="📄 Download PDF Report",
+                        data=pdf_bytes,
+                        file_name=download_filename,
+                        mime="application/pdf",
+                        key="download_pdf",
+                        use_container_width=True,
+                        help="Download a PDF report with analysis results",
                     )
-                    
-                    st.markdown(formatted_info, unsafe_allow_html=True)
-                    st.markdown('</div>', unsafe_allow_html=True)
-                    
-                    # Create PDF report
-                    pdf_bytes = create_pdf(original_image, extracted_info)
-                    if pdf_bytes:
-                        st.markdown("<div style='text-align: center; margin-top: 1rem;'>", unsafe_allow_html=True)
-                        download_filename = f"drug_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                        st.download_button(
-                            label="📄 Download PDF Report",
-                            data=pdf_bytes,
-                            file_name=download_filename,
-                            mime="application/pdf",
-                            key="download_pdf",
-                            use_container_width=True,
-                            help="Download a PDF report with analysis results",
-                        )
-                        st.markdown("</div>", unsafe_allow_html=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
         else:
             st.markdown("""
             <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 400px; text-align: center;">
