@@ -25,9 +25,21 @@ st.set_page_config(
     page_icon="💊"
 )
 
-# Custom CSS for better styling
+# Custom CSS for light theme styling
 st.markdown("""
 <style>
+    /* Force light theme */
+    .stApp {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    
+    /* Main container styling */
+    .main .block-container {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    
     .main-header {
         font-size: 2.5rem;
         font-weight: 700;
@@ -45,23 +57,27 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     .card {
-        background-color: #F9FAFB;
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
         border-radius: 10px;
         padding: 1.5rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         margin-bottom: 1.5rem;
+        color: #000000;
     }
     .success-box {
         background-color: #D1FAE5;
         border-left: 5px solid #059669;
         padding: 1rem;
         border-radius: 5px;
+        color: #000000;
     }
     .warning-box {
         background-color: #FEF3C7;
         border-left: 5px solid #D97706;
         padding: 1rem;
         border-radius: 5px;
+        color: #000000;
     }
     .info-box {
         background-color: #E0F2FE;
@@ -69,24 +85,28 @@ st.markdown("""
         padding: 1rem;
         border-radius: 5px;
         margin-bottom: 1rem;
+        color: #000000;
     }
     .disclaimer-box {
-        background-color: rgba(220, 38, 38, 0.05);
+        background-color: #FEF2F2;
+        border: 1px solid #FECACA;
         border-left: 5px solid #DC2626;
         padding: 0.75rem;
         border-radius: 5px;
         margin: 0 0 1rem 0;
+        color: #000000;
     }
     .stButton>button {
-        background-color: #1E3A8A;
-        color: white;
+        background-color: #1E3A8A !important;
+        color: white !important;
         font-weight: 600;
         border-radius: 5px;
         padding: 0.5rem 2rem;
         width: 100%;
+        border: none;
     }
     .stButton>button:hover {
-        background-color: #1E40AF;
+        background-color: #1E40AF !important;
     }
     .upload-section {
         border: 2px dashed #CBD5E1;
@@ -94,11 +114,14 @@ st.markdown("""
         padding: 2rem;
         text-align: center;
         margin-bottom: 2rem;
-        background-color: #F8FAFC;
+        background-color: #FFFFFF;
+        color: #000000;
     }
     .info-label {
         font-weight: 600;
         color: #1E3A8A;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
     }
     .centered-image {
         display: flex;
@@ -111,19 +134,20 @@ st.markdown("""
         text-align: center;
         font-size: 1.2rem;
         font-weight: 600;
-        color: #4F46E5;
+        color: #1E3A8A;
         margin: 1.5rem auto;
         padding: 0.75rem;
         border-radius: 0.5rem;
-        background-color: #EEF2FF;
+        background-color: #EFF6FF;
+        border: 1px solid #DBEAFE;
         max-width: 400px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     .dark-tagline {
         text-align: center;
         font-size: 1.2rem;
         font-weight: 600;
-        color: #E0F2FE;
+        color: #FFFFFF;
         margin: 1.5rem auto;
         padding: 0.75rem;
         border-radius: 0.5rem;
@@ -136,6 +160,66 @@ st.markdown("""
         margin-top: 1rem;
     }
     .download-btn:hover {
+        background-color: #065F46 !important;
+    }
+    
+    /* Force text colors for all elements */
+    .stMarkdown, .stText, p, div, span {
+        color: #000000 !important;
+    }
+    
+    /* File uploader styling */
+    .stFileUploader > div {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    
+    .stFileUploader label {
+        color: #000000 !important;
+    }
+    
+    /* Spinner styling */
+    .stSpinner > div {
+        color: #1E3A8A !important;
+    }
+    
+    /* Error and success message styling */
+    .stAlert {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    
+    /* Sidebar (if used) */
+    .css-1d391kg {
+        background-color: #FFFFFF !important;
+    }
+    
+    /* Column styling */
+    .css-1r6slb0 {
+        background-color: #FFFFFF !important;
+    }
+    
+    /* Force white background for all containers */
+    [data-testid="stAppViewContainer"] {
+        background-color: #FFFFFF !important;
+    }
+    
+    [data-testid="stHeader"] {
+        background-color: #FFFFFF !important;
+    }
+    
+    [data-testid="stToolbar"] {
+        background-color: #FFFFFF !important;
+    }
+    
+    /* Download button specific styling */
+    .stDownloadButton > button {
+        background-color: #047857 !important;
+        color: white !important;
+        border: none !important;
+    }
+    
+    .stDownloadButton > button:hover {
         background-color: #065F46 !important;
     }
 </style>
@@ -378,7 +462,7 @@ def main():
     with col2:
         st.markdown('<div class="main-header">💊 Drug Composition Analyzer</div>', unsafe_allow_html=True)
         st.markdown("""
-        <div style="text-align: center; margin-bottom: 1rem; color: #6B7280;">
+        <div style="text-align: center; margin-bottom: 1rem; color: #4B5563;">
             Upload a tablet image to analyze its composition, uses, side effects, and cost
         </div>
         """, unsafe_allow_html=True)
@@ -389,8 +473,8 @@ def main():
         <div style="display: flex; align-items: flex-start;">
             <span style="font-size: 1.3rem; margin-right: 0.5rem; margin-top: 0.1rem;">⚠️</span>
             <div>
-                <div style="font-weight: 600; margin-bottom: 0.25rem;">MEDICAL DISCLAIMER</div>
-                <div style="font-size: 0.9rem; line-height: 1.4;">The information provided by this application is for educational purposes only and is not intended to replace professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition or medication.</div>
+                <div style="font-weight: 600; margin-bottom: 0.25rem; color: #DC2626;">MEDICAL DISCLAIMER</div>
+                <div style="font-size: 0.9rem; line-height: 1.4; color: #374151;">The information provided by this application is for educational purposes only and is not intended to replace professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition or medication.</div>
             </div>
         </div>
     </div>
@@ -443,11 +527,11 @@ def main():
             st.markdown("""
             <div style="text-align: center; color: #6B7280; margin-top: 2rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16" style="margin-bottom: 1rem;">
-                    <path d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0-1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383z"/>
+                    <path d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383z"/>
                     <path d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3z"/>
                 </svg>
-                <p>Drag and drop or click to upload a tablet image</p>
-                <p style="font-size: 0.8rem;">Supported formats: JPG, JPEG, PNG</p>
+                <p style="color: #374151;">Drag and drop or click to upload a tablet image</p>
+                <p style="font-size: 0.8rem; color: #6B7280;">Supported formats: JPG, JPEG, PNG</p>
             </div>
             """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
@@ -496,7 +580,7 @@ def main():
             <div class="card" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 400px; text-align: center;">
                 <div style="color: #6B7280; font-size: 4rem; margin-bottom: 1rem;">🔬</div>
                 <div style="font-weight: 600; font-size: 1.2rem; color: #1E3A8A; margin-bottom: 0.5rem;">Ready to Analyze</div>
-                <div style="color: #6B7280;">Upload a tablet image and click "Analyze Tablet" to see the results here</div>
+                <div style="color: #374151;">Upload a tablet image and click "Analyze Tablet" to see the results here</div>
             </div>
             """, unsafe_allow_html=True)
     
