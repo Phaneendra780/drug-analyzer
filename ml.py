@@ -16,14 +16,395 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as Re
 from reportlab.lib.units import inch
 from datetime import datetime
 import re
+import time
 
 # Set page configuration
 st.set_page_config(
-    page_title="MediScan - Drug Composition Analyzer",
+    page_title="MediScan - AI Drug Analyzer",
     layout="wide",
     initial_sidebar_state="collapsed",
     page_icon="🏥"
 )
+
+# Custom CSS for enhanced UI
+st.markdown("""
+<style>
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    /* Global Styles */
+    .stApp {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Main Container */
+    .main-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 1rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        animation: fadeInUp 0.8s ease-out;
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    /* Header Styling */
+    .main-header {
+        text-align: center;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        animation: slideIn 1s ease-out;
+    }
+    
+    .subtitle {
+        text-align: center;
+        color: #64748b;
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        animation: slideIn 1.2s ease-out;
+    }
+    
+    /* Card Styling */
+    .feature-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        margin: 1rem 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    .upload-card {
+        background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 1rem 0;
+        border: 2px dashed #29b6f6;
+        text-align: center;
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.8s ease-out;
+    }
+    
+    .upload-card:hover {
+        border-color: #0288d1;
+        background: linear-gradient(135deg, #b3e5fc 0%, #81d4fa 100%);
+        transform: scale(1.02);
+    }
+    
+    .results-card {
+        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        margin: 1rem 0;
+        border-left: 4px solid #9c27b0;
+        animation: slideIn 0.8s ease-out;
+    }
+    
+    /* Button Styling */
+    .stButton > button {
+        background: linear-gradient(45deg, #667eea, #764ba2) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 0.75rem 2rem !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+        animation: pulse 2s infinite !important;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
+        animation: none !important;
+    }
+    
+    .stButton > button:active {
+        transform: translateY(0) !important;
+    }
+    
+    /* Download Button */
+    .stDownloadButton > button {
+        background: linear-gradient(45deg, #4caf50, #8bc34a) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 0.75rem 2rem !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
+    }
+    
+    .stDownloadButton > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4) !important;
+    }
+    
+    /* Alert Styling */
+    .alert-success {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        border: 1px solid #28a745;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+        animation: slideIn 0.6s ease-out;
+    }
+    
+    .alert-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 1px solid #ffc107;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+        animation: slideIn 0.6s ease-out;
+    }
+    
+    .alert-error {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        border: 1px solid #dc3545;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+        animation: slideIn 0.6s ease-out;
+    }
+    
+    .alert-info {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+        border: 1px solid #17a2b8;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+        animation: slideIn 0.6s ease-out;
+    }
+    
+    /* Section Headers */
+    .section-header {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 2rem 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+        animation: slideIn 0.8s ease-out;
+    }
+    
+    /* Safety Information Cards */
+    .safety-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border-left: 4px solid #667eea;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .safety-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+    
+    .safety-card.success {
+        border-left-color: #28a745;
+        background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+    }
+    
+    .safety-card.warning {
+        border-left-color: #ffc107;
+        background: linear-gradient(135deg, #fffef7 0%, #fff3cd 100%);
+    }
+    
+    .safety-card.error {
+        border-left-color: #dc3545;
+        background: linear-gradient(135deg, #fff8f8 0%, #f8d7da 100%);
+    }
+    
+    /* Medication Names */
+    .medication-name {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        margin: 0.25rem;
+        display: inline-block;
+        font-weight: 500;
+        color: #1976d2;
+        border: 1px solid #2196f3;
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.4s ease-out;
+    }
+    
+    .medication-name:hover {
+        transform: scale(1.05);
+        background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+    }
+    
+    /* Progress Bar */
+    .progress-bar {
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        height: 4px;
+        border-radius: 2px;
+        animation: pulse 2s infinite;
+    }
+    
+    /* Disclaimer Box */
+    .disclaimer-box {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        border: 2px solid #f44336;
+        border-radius: 16px;
+        padding: 2rem;
+        margin: 2rem 0;
+        animation: fadeInUp 1s ease-out;
+    }
+    
+    /* Image Container */
+    .image-container {
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .image-container:hover {
+        transform: scale(1.02);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Interaction Analysis */
+    .interaction-analysis {
+        background: linear-gradient(135deg, #fff9c4 0%, #f0f4c3 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        margin: 2rem 0;
+        border: 1px solid #fbc02d;
+        animation: slideIn 0.8s ease-out;
+    }
+    
+    .interaction-severe {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        border-color: #f44336;
+    }
+    
+    .interaction-moderate {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        border-color: #ff9800;
+    }
+    
+    .interaction-minor {
+        background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+        border-color: #4caf50;
+    }
+    
+    /* Footer */
+    .footer {
+        text-align: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 16px;
+        margin-top: 3rem;
+        color: #64748b;
+        animation: fadeInUp 1.2s ease-out;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 2rem;
+        }
+        
+        .feature-card, .upload-card, .results-card {
+            margin: 0.5rem 0;
+            padding: 1.5rem;
+        }
+    }
+    
+    /* Loading Animation */
+    .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+    }
+    
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Hide Streamlit Default Elements */
+    .stDeployButton {
+        display: none;
+    }
+    
+    #MainMenu {
+        visibility: hidden;
+    }
+    
+    footer {
+        visibility: hidden;
+    }
+    
+    header {
+        visibility: hidden;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # API Keys
 TAVILY_API_KEY = st.secrets.get("TAVILY_API_KEY")
@@ -132,7 +513,21 @@ def extract_composition_and_details(image_path):
         return None
 
     try:
-        with st.spinner("🔬 Analyzing tablet image and retrieving comprehensive medical information..."):
+        # Show loading animation
+        progress_placeholder = st.empty()
+        with progress_placeholder.container():
+            st.markdown('<div class="loading"><div class="spinner"></div></div>', unsafe_allow_html=True)
+            st.markdown("### 🔬 Analyzing tablet image...")
+            
+            # Add progress bar
+            progress_bar = st.progress(0)
+            for i in range(100):
+                time.sleep(0.02)
+                progress_bar.progress(i + 1)
+        
+        progress_placeholder.empty()
+        
+        with st.spinner("🔍 Extracting composition and retrieving medical information..."):
             response = agent.run(
                 "Extract the drug composition from this tablet image and provide its uses, side effects, cost, available tablet names/brands, usage instructions, and comprehensive safety information including alcohol interactions, pregnancy safety, breastfeeding considerations, and driving safety.",
                 images=[image_path],
@@ -152,7 +547,7 @@ def analyze_drug_interactions(drug_composition, additional_medications):
         return None
 
     try:
-        with st.spinner("🔍 Analyzing drug interactions..."):
+        with st.spinner("💊 Analyzing drug interactions..."):
             query = f"""
             Analyze potential drug interactions between:
             Primary Drug: {drug_composition}
@@ -334,18 +729,15 @@ def display_tablet_names(tablet_names_text):
     if not tablet_names:
         tablet_names = [tablet_names_text.strip()]
     
-    # Display in columns for better readability
+    # Display in a more visually appealing way
     if len(tablet_names) > 1:
-        # Create columns based on number of names
-        num_cols = min(3, len(tablet_names))
-        cols = st.columns(num_cols)
-        
-        for i, name in enumerate(tablet_names):
-            if name:  # Only display non-empty names
-                with cols[i % num_cols]:
-                    st.markdown(f"🏷️ **{name}**")
+        st.markdown('<div style="margin: 1rem 0;">', unsafe_allow_html=True)
+        for name in tablet_names:
+            if name:
+                st.markdown(f'<div class="medication-name">🏷️ {name}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     else:
-        st.write(tablet_names[0] if tablet_names else tablet_names_text)
+        st.markdown(f'<div class="medication-name">🏷️ {tablet_names[0] if tablet_names else tablet_names_text}</div>', unsafe_allow_html=True)
 
 def display_safety_info(content, safety_type):
     """Display safety information with appropriate styling."""
@@ -354,13 +746,13 @@ def display_safety_info(content, safety_type):
     
     # Color coding for different safety levels
     if "safe" in content.lower() or "no interaction" in content.lower():
-        st.success(f"✅ {content}")
+        st.markdown(f'<div class="safety-card success">✅ <strong>{safety_type}:</strong><br>{content}</div>', unsafe_allow_html=True)
     elif "avoid" in content.lower() or "contraindicated" in content.lower() or "not recommended" in content.lower():
-        st.error(f"❌ {content}")
+        st.markdown(f'<div class="safety-card error">❌ <strong>{safety_type}:</strong><br>{content}</div>', unsafe_allow_html=True)
     elif "caution" in content.lower() or "monitor" in content.lower() or "consult" in content.lower():
-        st.warning(f"⚠️ {content}")
+        st.markdown(f'<div class="safety-card warning">⚠️ <strong>{safety_type}:</strong><br>{content}</div>', unsafe_allow_html=True)
     else:
-        st.info(f"ℹ️ {content}")
+        st.markdown(f'<div class="safety-card">ℹ️ <strong>{safety_type}:</strong><br>{content}</div>', unsafe_allow_html=True)
 
 def main():
     # Initialize session state for button tracking
@@ -377,92 +769,152 @@ def main():
     if 'additional_medications' not in st.session_state:
         st.session_state.additional_medications = ""
 
+    # Main container
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
+    
     # Header
-    st.title("🏥 MediScan - Comprehensive Drug Analyzer")
+    st.markdown('<h1 class="main-header">🏥 MediScan</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">AI-Powered Drug Composition Analyzer & Safety Checker</p>', unsafe_allow_html=True)
     
     # Medical disclaimer
-    st.warning("""
-    ⚠️ **MEDICAL DISCLAIMER**
-    
-    The information provided by MediScan is for educational and informational purposes only and is not intended to replace professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition, medication, or drug interactions.
-    """)
+    st.markdown("""
+    <div class="disclaimer-box">
+        <h3 style="color: #f44336; margin-bottom: 1rem;">⚠️ MEDICAL DISCLAIMER</h3>
+        <p style="margin-bottom: 0.5rem;">The information provided by MediScan is for educational and informational purposes only and is not intended to replace professional medical advice, diagnosis, or treatment.</p>
+        <p style="margin: 0;"><strong>Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition, medication, or drug interactions.</strong></p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Main content in two columns
-    col1, col2 = st.columns([1, 1])
+    col1, col2 = st.columns([1, 1], gap="large")
     
     with col1:
-        st.subheader("📤 Upload Tablet Image")
+        st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+        st.markdown('<h2 class="section-header">📤 Upload Tablet Image</h2>', unsafe_allow_html=True)
         
+        st.markdown('<div class="upload-card">', unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
-            "Upload a clear image of the tablet",
+            "📷 Choose a clear image of the tablet",
             type=["jpg", "jpeg", "png", "webp"],
-            help="Upload a clear, high-quality image of the tablet or its packaging"
+            help="Upload a clear, high-quality image of the tablet or its packaging for accurate analysis",
+            label_visibility="collapsed"
         )
         
         if uploaded_file:
-            # Display uploaded image
+            # Display uploaded image with enhanced styling
             resized_image = resize_image_for_display(uploaded_file)
             if resized_image:
-                st.image(resized_image, caption="Uploaded Tablet Image", width=MAX_IMAGE_WIDTH)
+                st.markdown('<div class="image-container">', unsafe_allow_html=True)
+                st.image(resized_image, caption="📸 Uploaded Tablet Image", width=MAX_IMAGE_WIDTH)
+                st.markdown('</div>', unsafe_allow_html=True)
                 
-                # Display file info
+                # Display file info with better formatting
                 file_size = len(uploaded_file.getvalue()) / 1024  # Convert to KB
-                st.info(f"**{uploaded_file.name}** • {file_size:.1f} KB")
+                st.markdown(f"""
+                <div style="text-align: center; margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%); border-radius: 8px;">
+                    <strong>📄 {uploaded_file.name}</strong> • {file_size:.1f} KB
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="text-align: center; padding: 2rem; color: #64748b;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">📱</div>
+                <h3>Upload Your Tablet Image</h3>
+                <p>Drag and drop or click to browse</p>
+                <p style="font-size: 0.9rem; color: #94a3b8;">Supported formats: JPG, JPEG, PNG, WEBP</p>
+            </div>
+            """, unsafe_allow_html=True)
         
-        # Additional medications input
-        st.subheader("💊 Additional Medications (Optional)")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Additional medications input with enhanced styling
+        st.markdown('<h2 class="section-header">💊 Additional Medications</h2>', unsafe_allow_html=True)
+        st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+        
         additional_meds = st.text_area(
             "Enter any other medications you are currently taking:",
             placeholder="e.g., Aspirin 75mg daily, Metformin 500mg twice daily, Lisinopril 10mg once daily",
             help="Include medication names, dosages, and frequency. This helps check for potential drug interactions.",
-            key="additional_medications_input"
+            key="additional_medications_input",
+            height=100
         )
         
-        # Analyze button
-        if uploaded_file and st.button("🔬 Analyze Tablet & Check Safety"):
-            st.session_state.analyze_clicked = True
-            st.session_state.additional_medications = additional_meds
-            
-            # Save uploaded file and analyze
-            temp_path = save_uploaded_file(uploaded_file)
-            if temp_path:
-                try:
-                    extracted_info = extract_composition_and_details(temp_path)
-                    
-                    if extracted_info:
-                        # Store results in session state
-                        st.session_state.analysis_results = extracted_info
-                        st.session_state.original_image = uploaded_file.getvalue()
+        st.markdown('<p style="font-size: 0.9rem; color: #64748b; margin-top: 0.5rem;">💡 Include dosages and frequency for better interaction analysis</p>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Analyze button with enhanced styling
+        if uploaded_file:
+            st.markdown('<div style="text-align: center; margin: 2rem 0;">', unsafe_allow_html=True)
+            if st.button("🔬 Analyze Tablet & Check Safety", key="analyze_btn", use_container_width=True):
+                st.session_state.analyze_clicked = True
+                st.session_state.additional_medications = additional_meds
+                
+                # Save uploaded file and analyze
+                temp_path = save_uploaded_file(uploaded_file)
+                if temp_path:
+                    try:
+                        extracted_info = extract_composition_and_details(temp_path)
                         
-                        # Extract drug composition for interaction analysis
-                        composition_match = re.search(r"\*Composition:\*(.*?)(?=\*[\w\s]+:\*|$)", extracted_info, re.DOTALL | re.IGNORECASE)
-                        if composition_match:
-                            st.session_state.drug_composition = composition_match.group(1).strip()
+                        if extracted_info:
+                            # Store results in session state
+                            st.session_state.analysis_results = extracted_info
+                            st.session_state.original_image = uploaded_file.getvalue()
+                            
+                            # Extract drug composition for interaction analysis
+                            composition_match = re.search(r"\*Composition:\*(.*?)(?=\*[\w\s]+:\*|$)", extracted_info, re.DOTALL | re.IGNORECASE)
+                            if composition_match:
+                                st.session_state.drug_composition = composition_match.group(1).strip()
+                            
+                            # Analyze drug interactions if additional medications provided
+                            if additional_meds.strip():
+                                interaction_result = analyze_drug_interactions(
+                                    st.session_state.drug_composition or "Unknown composition",
+                                    additional_meds
+                                )
+                                st.session_state.interaction_analysis = interaction_result
+                            
+                            st.markdown("""
+                            <div class="alert-success">
+                                <strong>✅ Analysis Complete!</strong><br>
+                                Comprehensive drug analysis has been completed successfully. Check the results panel for detailed information.
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown("""
+                            <div class="alert-error">
+                                <strong>❌ Analysis Failed</strong><br>
+                                Please try with a clearer image or different angle.
+                            </div>
+                            """, unsafe_allow_html=True)
                         
-                        # Analyze drug interactions if additional medications provided
-                        if additional_meds.strip():
-                            interaction_result = analyze_drug_interactions(
-                                st.session_state.drug_composition or "Unknown composition",
-                                additional_meds
-                            )
-                            st.session_state.interaction_analysis = interaction_result
-                        
-                        st.success("✅ Comprehensive analysis completed successfully!")
-                    else:
-                        st.error("❌ Analysis failed. Please try with a clearer image.")
-                    
-                except Exception as e:
-                    st.error(f"🚨 Analysis failed: {e}")
-                finally:
-                    # Clean up temp file
-                    if os.path.exists(temp_path):
-                        os.unlink(temp_path)
+                    except Exception as e:
+                        st.markdown(f"""
+                        <div class="alert-error">
+                            <strong>🚨 Analysis Error</strong><br>
+                            {str(e)}
+                        </div>
+                        """, unsafe_allow_html=True)
+                    finally:
+                        # Clean up temp file
+                        if os.path.exists(temp_path):
+                            os.unlink(temp_path)
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="text-align: center; margin: 2rem 0; padding: 1rem; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: 12px; border: 2px dashed #cbd5e1;">
+                <p style="color: #64748b; margin: 0;">📤 Please upload a tablet image to begin analysis</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        st.subheader("📊 Analysis Results")
+        st.markdown('<div class="results-card">', unsafe_allow_html=True)
+        st.markdown('<h2 class="section-header">📊 Analysis Results</h2>', unsafe_allow_html=True)
         
         # Display results if available
         if st.session_state.analysis_results:
+            st.markdown('<div class="feature-card">', unsafe_allow_html=True)
             st.markdown("### 🔬 Comprehensive Drug Analysis")
             
             # Parse and display results
@@ -506,12 +958,15 @@ def main():
                     elif section in ["Safety with Alcohol", "Pregnancy Safety", "Breastfeeding Safety", "Driving Safety"]:
                         display_safety_info(content, section)
                     else:
-                        st.write(content)
+                        st.markdown(f'<div class="safety-card"><p style="margin: 0;">{content}</p></div>', unsafe_allow_html=True)
                     
-                    st.markdown("---")
+                    st.markdown('<div style="margin: 1rem 0; height: 2px; background: linear-gradient(90deg, #667eea, #764ba2); opacity: 0.3;"></div>', unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
             
             # Display drug interaction analysis if available
             if st.session_state.interaction_analysis:
+                st.markdown('<div class="interaction-analysis">', unsafe_allow_html=True)
                 st.markdown("### 💊 Drug Interaction Analysis")
                 st.markdown(f"**Additional Medications:** {st.session_state.additional_medications}")
                 
@@ -519,20 +974,37 @@ def main():
                 interaction_text = st.session_state.interaction_analysis
                 
                 if "severe" in interaction_text.lower() or "major" in interaction_text.lower():
-                    st.error("🚨 **SEVERE/MAJOR INTERACTION DETECTED**")
+                    st.markdown("""
+                    <div class="interaction-analysis interaction-severe">
+                        <h4 style="color: #f44336; margin-bottom: 1rem;">🚨 SEVERE/MAJOR INTERACTION DETECTED</h4>
+                    </div>
+                    """, unsafe_allow_html=True)
                 elif "moderate" in interaction_text.lower():
-                    st.warning("⚠️ **MODERATE INTERACTION**")
+                    st.markdown("""
+                    <div class="interaction-analysis interaction-moderate">
+                        <h4 style="color: #ff9800; margin-bottom: 1rem;">⚠️ MODERATE INTERACTION</h4>
+                    </div>
+                    """, unsafe_allow_html=True)
                 elif "minor" in interaction_text.lower():
-                    st.info("ℹ️ **MINOR INTERACTION**")
+                    st.markdown("""
+                    <div class="interaction-analysis interaction-minor">
+                        <h4 style="color: #4caf50; margin-bottom: 1rem;">ℹ️ MINOR INTERACTION</h4>
+                    </div>
+                    """, unsafe_allow_html=True)
                 else:
-                    st.success("✅ **LOW INTERACTION RISK**")
+                    st.markdown("""
+                    <div class="interaction-analysis interaction-minor">
+                        <h4 style="color: #4caf50; margin-bottom: 1rem;">✅ LOW INTERACTION RISK</h4>
+                    </div>
+                    """, unsafe_allow_html=True)
                 
-                st.write(interaction_text)
-                st.markdown("---")
+                st.markdown(f'<div class="safety-card"><p style="margin: 0;">{interaction_text}</p></div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
             
-            # PDF download section
+            # PDF download section with enhanced styling
             if st.session_state.original_image:
-                st.subheader("📄 Download Comprehensive Report")
+                st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+                st.markdown("### 📄 Download Complete Report")
                 
                 pdf_bytes = create_pdf(
                     st.session_state.original_image,
@@ -541,57 +1013,101 @@ def main():
                     st.session_state.additional_medications
                 )
                 if pdf_bytes:
-                    download_filename = f"mediscan_comprehensive_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                    download_filename = f"mediscan_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                     st.download_button(
                         label="📥 Download Complete PDF Report",
                         data=pdf_bytes,
                         file_name=download_filename,
                         mime="application/pdf",
-                        help="Download a comprehensive PDF report with all analysis results and safety information"
+                        help="Download a comprehensive PDF report with all analysis results and safety information",
+                        use_container_width=True
                     )
+                st.markdown('</div>', unsafe_allow_html=True)
         else:
-            st.info("Upload a tablet image and click 'Analyze Tablet & Check Safety' to see comprehensive results here.")
+            st.markdown("""
+            <div style="text-align: center; padding: 3rem; color: #64748b;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">🔍</div>
+                <h3>Ready for Analysis</h3>
+                <p>Upload a tablet image and click 'Analyze' to see comprehensive results here.</p>
+                <div style="margin-top: 2rem; padding: 1rem; background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%); border-radius: 12px;">
+                    <strong>What you'll get:</strong>
+                    <ul style="text-align: left; margin-top: 0.5rem; color: #2e7d32;">
+                        <li>🧬 Drug composition analysis</li>
+                        <li>💊 Medical uses and dosage</li>
+                        <li>⚠️ Side effects and precautions</li>
+                        <li>🔍 Drug interaction checking</li>
+                        <li>📄 Downloadable PDF report</li>
+                    </ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     # Additional Safety Information Section
     if st.session_state.analysis_results:
-        st.markdown("---")
-        st.subheader("🛡️ Important Safety Reminders")
+        st.markdown('<div style="margin-top: 3rem;">', unsafe_allow_html=True)
+        st.markdown('<h2 class="section-header">🛡️ Important Safety Reminders</h2>', unsafe_allow_html=True)
         
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2, gap="large")
         
         with col1:
             st.markdown("""
-            **🍺 Alcohol Interaction:**
-            - Always check the specific alcohol interaction information above
-            - Some medications can cause severe reactions with alcohol
-            - Consult your doctor about alcohol consumption while on medication
-            """)
+            <div class="safety-card">
+                <h4 style="color: #667eea; margin-bottom: 1rem;">🍺 Alcohol Interactions</h4>
+                <ul style="margin: 0; padding-left: 1.5rem;">
+                    <li>Always check the specific alcohol interaction information above</li>
+                    <li>Some medications can cause severe reactions with alcohol</li>
+                    <li>Consult your doctor about alcohol consumption while on medication</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
             
             st.markdown("""
-            **🤱 Pregnancy & Breastfeeding:**
-            - Medication safety varies by trimester
-            - Many drugs can pass through breast milk
-            - Always inform your healthcare provider if you're pregnant or breastfeeding
-            """)
+            <div class="safety-card">
+                <h4 style="color: #667eea; margin-bottom: 1rem;">🤱 Pregnancy & Breastfeeding</h4>
+                <ul style="margin: 0; padding-left: 1.5rem;">
+                    <li>Medication safety varies by trimester</li>
+                    <li>Many drugs can pass through breast milk</li>
+                    <li>Always inform your healthcare provider if you're pregnant or breastfeeding</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
         
         with col2:
             st.markdown("""
-            **🚗 Driving Safety:**
-            - Some medications can cause drowsiness or dizziness
-            - Check the driving safety information above
-            - Avoid driving if you feel impaired
-            """)
+            <div class="safety-card">
+                <h4 style="color: #667eea; margin-bottom: 1rem;">🚗 Driving Safety</h4>
+                <ul style="margin: 0; padding-left: 1.5rem;">
+                    <li>Some medications can cause drowsiness or dizziness</li>
+                    <li>Check the driving safety information above</li>
+                    <li>Avoid driving if you feel impaired</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
             
             st.markdown("""
-            **💊 Drug Interactions:**
-            - Always provide a complete list of medications to your doctor
-            - Include over-the-counter drugs and supplements
-            - Check for interactions before starting new medications
-            """)
+            <div class="safety-card">
+                <h4 style="color: #667eea; margin-bottom: 1rem;">💊 Drug Interactions</h4>
+                <ul style="margin: 0; padding-left: 1.5rem;">
+                    <li>Always provide a complete list of medications to your doctor</li>
+                    <li>Include over-the-counter drugs and supplements</li>
+                    <li>Check for interactions before starting new medications</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     # Footer
-    st.markdown("---")
-    st.markdown("© 2025 MediScan - Comprehensive Drug Analyzer | Powered by Gemini AI + Tavily")
+    st.markdown("""
+    <div class="footer">
+        <p style="font-size: 1.1rem; font-weight: 500; margin-bottom: 0.5rem;">🏥 MediScan - AI-Powered Drug Analysis</p>
+        <p style="margin: 0;">© 2025 MediScan | Powered by Gemini AI + Tavily | Made with ❤️ for Healthcare</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
