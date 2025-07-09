@@ -16,177 +16,216 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as Re
 from reportlab.lib.units import inch
 from datetime import datetime
 import re
-import time
 
-# Set page configuration with forensic theme
+# Set page configuration
 st.set_page_config(
-    page_title="🔬 MediScan Forensic Lab - Drug Analysis Bureau",
+    page_title="MediScan - Drug Composition Analyzer",
     layout="wide",
-    initial_sidebar_state="expanded",
-    page_icon="🔬"
+    initial_sidebar_state="collapsed",
+    page_icon="🏥"
 )
 
-# Custom CSS for beige forensic theme
+# Custom CSS for professional white theme
 st.markdown("""
 <style>
-    /* Main background and theming */
-    .main {
-        background: linear-gradient(135deg, #f5f5dc 0%, #e6ddd4 100%);
-        color: #3d2f1f;
-    }
-    
-    /* Sidebar forensic lab theme */
-    .css-1d391kg {
-        background: linear-gradient(180deg, #8b7355 0%, #6d5a3d 100%);
-        color: #f5f5dc;
+    /* Main app styling */
+    .main > div {
+        padding: 0rem 1rem;
     }
     
     /* Header styling */
-    .forensic-header {
-        background: linear-gradient(90deg, #8b7355 0%, #a08660 50%, #8b7355 100%);
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        text-align: center;
+    .main-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        border: 2px solid #6d5a3d;
-    }
-    
-    /* Evidence cards */
-    .evidence-card {
-        background: linear-gradient(135deg, #f5f5dc 0%, #ede4d3 100%);
-        border: 2px solid #8b7355;
+        padding: 2rem 1.5rem;
         border-radius: 15px;
-        padding: 20px;
-        margin: 15px 0;
-        box-shadow: 0 6px 20px rgba(139,115,85,0.3);
-        position: relative;
-        overflow: hidden;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        text-align: center;
     }
     
-    .evidence-card::before {
-        content: "";
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: repeating-linear-gradient(
-            45deg,
-            transparent,
-            transparent 10px,
-            rgba(139,115,85,0.05) 10px,
-            rgba(139,115,85,0.05) 20px
-        );
-        animation: drift 20s linear infinite;
+    .main-header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 700;
     }
     
-    @keyframes drift {
-        0% { transform: translateX(-100px) translateY(-100px); }
-        100% { transform: translateX(100px) translateY(100px); }
+    .main-header p {
+        margin: 0.5rem 0 0 0;
+        font-size: 1.1rem;
+        opacity: 0.9;
     }
     
-    /* Lab equipment styling */
-    .lab-equipment {
-        background: linear-gradient(45deg, #d4c4a8 0%, #c4b69c 100%);
-        border: 3px solid #8b7355;
-        border-radius: 20px;
-        padding: 25px;
-        margin: 20px 0;
-        box-shadow: inset 0 2px 10px rgba(0,0,0,0.1), 0 8px 25px rgba(139,115,85,0.4);
+    /* Card styling */
+    .card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        border: 1px solid #e1e8ed;
+        margin-bottom: 1.5rem;
     }
     
-    /* Forensic buttons */
+    .card h3 {
+        color: #2c3e50;
+        margin-top: 0;
+        font-weight: 600;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 0.5rem;
+    }
+    
+    /* Button styling */
     .stButton > button {
-        background: linear-gradient(45deg, #8b7355 0%, #a0866d 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        border: 2px solid #6d5a3d;
+        border: none;
+        padding: 0.75rem 2rem;
         border-radius: 25px;
-        padding: 12px 30px;
-        font-weight: bold;
+        font-weight: 600;
+        font-size: 1rem;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(139,115,85,0.4);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        width: 100%;
     }
     
     .stButton > button:hover {
-        background: linear-gradient(45deg, #6d5a3d 0%, #8b7355 100%);
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(139,115,85,0.6);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
     
-    /* File uploader styling */
-    .stFileUploader {
-        background: linear-gradient(135deg, #f5f5dc 0%, #e6ddd4 100%);
-        border: 3px dashed #8b7355;
-        border-radius: 15px;
-        padding: 20px;
+    /* Upload area styling */
+    .upload-section {
+        background: #f8f9fa;
+        border: 2px dashed #3498db;
+        border-radius: 12px;
+        padding: 2rem;
         text-align: center;
+        margin-bottom: 1.5rem;
     }
     
-    /* Progress bars */
+    /* Analysis results styling */
+    .analysis-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border-left: 4px solid #3498db;
+    }
+    
+    .section-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border-left: 4px solid #3498db;
+    }
+    
+    .section-header h4 {
+        margin: 0;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+    
+    /* Safety styling */
+    .safety-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+    }
+    
+    .safety-warning {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+    }
+    
+    .safety-danger {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+    }
+    
+    /* Disclaimer styling */
+    .disclaimer {
+        background: #ffe6e6;
+        border: 2px solid #ff9999;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        color: #cc0000;
+        font-weight: 500;
+    }
+    
+    /* File info styling */
+    .file-info {
+        background: #e8f4fd;
+        border: 1px solid #b8daff;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+        color: #0c5460;
+    }
+    
+    /* Progress styling */
     .stProgress > div > div {
-        background: linear-gradient(90deg, #8b7355 0%, #a0866d 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
     
-    /* Alerts and notifications */
-    .stAlert {
-        border-radius: 10px;
-        border-left: 5px solid #8b7355;
+    /* Spinner styling */
+    .stSpinner {
+        color: #667eea;
     }
     
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        background: linear-gradient(90deg, #d4c4a8 0%, #c4b69c 100%);
-        border-radius: 10px;
-    }
+    /* Hide streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
     
-    .stTabs [data-baseweb="tab"] {
-        background: transparent;
-        border-radius: 10px;
-        color: #3d2f1f;
-        font-weight: bold;
-    }
-    
-    /* Metrics styling */
-    .metric-container {
-        background: linear-gradient(135deg, #f5f5dc 0%, #e6ddd4 100%);
-        border: 2px solid #8b7355;
-        border-radius: 15px;
-        padding: 15px;
-        margin: 10px 0;
-        text-align: center;
-        box-shadow: 0 4px 12px rgba(139,115,85,0.3);
-    }
-    
-    /* Animated elements */
-    .scanning-animation {
-        animation: scan 2s ease-in-out infinite;
-    }
-    
-    @keyframes scan {
-        0%, 100% { opacity: 0.7; transform: scale(1); }
-        50% { opacity: 1; transform: scale(1.05); }
-    }
-    
-    /* Evidence labels */
-    .evidence-label {
-        background: #8b7355;
-        color: white;
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: bold;
-        display: inline-block;
-        margin: 5px;
-    }
-    
-    /* Forensic grid */
-    .forensic-grid {
+    /* Tablet names grid */
+    .tablet-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
-        margin: 20px 0;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .tablet-item {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    /* Download button special styling */
+    .download-btn {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -197,63 +236,55 @@ GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY")
 
 # Check if API keys are available
 if not TAVILY_API_KEY or not GOOGLE_API_KEY:
-    st.error("🔑 Forensic Lab Access Denied: Authentication credentials missing.")
+    st.error("🔑 API keys are missing. Please check your configuration.")
     st.stop()
 
-MAX_IMAGE_WIDTH = 350
+MAX_IMAGE_WIDTH = 400
 
 SYSTEM_PROMPT = """
-You are a forensic pharmaceutical analyst working in a state-of-the-art digital forensics laboratory specializing in drug identification and safety analysis.
-Your expertise combines traditional forensic methodologies with cutting-edge AI-driven pharmaceutical analysis.
+You are an expert in pharmaceutical analysis and AI-driven drug composition recognition with specialized knowledge in drug safety and interactions.
+Your role is to analyze a tablet's composition from an image, identify its ingredients, and provide comprehensive insights about the drug including safety considerations.
 
-As a forensic expert, you must:
-1. Analyze pharmaceutical evidence with scientific precision
-2. Identify drug compositions using forensic imaging techniques
-3. Provide detailed forensic reports with chain of custody considerations
-4. Ensure all analysis follows forensic protocols and documentation standards
-5. Present findings in a format suitable for medical and legal review
-
-Your analysis must be thorough, accurate, and maintain the highest standards of forensic integrity.
+Additionally, once a drug composition is identified, retrieve and display its uses, side effects, cost, available tablet names/brands, usage instructions, and critical safety information using reliable medical sources.
+Ensure that you fetch accurate and specific details instead of generic placeholders.
 """
 
 INSTRUCTIONS = """
-FORENSIC ANALYSIS PROTOCOL:
-- Conduct systematic examination of pharmaceutical evidence
-- Extract and verify drug composition using multi-spectral analysis
-- Cross-reference findings with pharmaceutical databases
-- Generate comprehensive forensic report with the following sections:
-  *Evidence ID & Composition:* <detailed composition analysis>
-  *Commercial Identifiers:* <brand names, generic names, manufacturer data>
-  *Therapeutic Applications:* <verified medical uses>
-  *Administration Protocol:* <dosage, timing, administration method>
-  *Adverse Reactions:* <documented side effects and contraindications>
-  *Market Analysis:* <pricing and availability data>
-  *Toxicology Profile:* <alcohol interactions, pregnancy/breastfeeding safety>
-  *Operational Safety:* <driving and machinery operation warnings>
-  *Contraindications:* <medical conditions and drug interactions>
-  *Chain of Custody:* <analysis timestamp and method verification>
-
-All findings must be documented with forensic precision and scientific rigor.
+- Extract only the drug composition from the tablet image.
+- Use this composition to fetch and return detailed information from trusted medical sources.
+- For tablet names, search for brand names, generic names, and commercial names that contain the identified composition.
+- Provide comprehensive safety information including alcohol interactions, pregnancy safety, breastfeeding considerations, and driving safety.
+- Return all information in a structured format:
+  *Composition:* <composition>
+  *Available Tablet Names:* <list of brand names and generic names that contain this composition>
+  *Uses:* <accurate uses based on online sources>
+  *How to Use:* <detailed dosage instructions, timing, with or without food>
+  *Side Effects:* <verified side effects>
+  *Cost:* <actual cost from trusted sources>
+  *Safety with Alcohol:* <specific advice about alcohol consumption>
+  *Pregnancy Safety:* <pregnancy category and safety advice>
+  *Breastfeeding Safety:* <safety for nursing mothers>
+  *Driving Safety:* <effects on driving ability>
+  *General Safety Advice:* <additional precautions and contraindications>
 """
 
 DRUG_INTERACTION_PROMPT = """
-You are conducting a forensic pharmaceutical interaction analysis as part of a comprehensive drug safety investigation.
-Your role is to identify and analyze potential drug-drug interactions with the precision required for forensic documentation.
+You are a pharmaceutical expert specializing in drug interactions and safety analysis.
+Analyze the potential interactions between the identified drug composition and the additional medications provided by the user.
 
-INTERACTION ANALYSIS PROTOCOL:
-- Classify interaction severity using forensic standards (None/Minor/Moderate/Major/Critical)
-- Document interaction mechanisms and clinical pathways
-- Assess risk levels for adverse outcomes
-- Provide evidence-based recommendations
-- Generate actionable safety protocols
-- Maintain forensic documentation standards
+Provide detailed interaction analysis including:
+- Severity level of interactions (None, Minor, Moderate, Major, Severe)
+- Specific interaction mechanisms
+- Clinical significance
+- Recommended actions or precautions
+- Alternative suggestions if dangerous interactions exist
 
-Present findings in a format suitable for medical-legal review and patient safety protocols.
+Be thorough and prioritize patient safety in your analysis.
 """
 
 @st.cache_resource
 def get_agent():
-    """Initialize forensic analysis agent."""
+    """Initialize and cache the AI agent."""
     try:
         return Agent(
             model=Gemini(id="gemini-2.0-flash-exp", api_key=GOOGLE_API_KEY),
@@ -263,12 +294,12 @@ def get_agent():
             markdown=True,
         )
     except Exception as e:
-        st.error(f"🚨 Forensic System Error: {e}")
+        st.error(f"❌ Error initializing agent: {e}")
         return None
 
 @st.cache_resource
 def get_interaction_agent():
-    """Initialize drug interaction analysis agent."""
+    """Initialize and cache the drug interaction agent."""
     try:
         return Agent(
             model=Gemini(id="gemini-2.0-flash-exp", api_key=GOOGLE_API_KEY),
@@ -277,73 +308,16 @@ def get_interaction_agent():
             markdown=True,
         )
     except Exception as e:
-        st.error(f"🚨 Interaction Analysis System Error: {e}")
+        st.error(f"❌ Error initializing interaction agent: {e}")
         return None
 
-def create_forensic_header():
-    """Create animated forensic header."""
-    st.markdown("""
-    <div class="forensic-header">
-        <h1>🔬 MediScan Forensic Laboratory</h1>
-        <h3>Digital Drug Analysis & Safety Investigation Bureau</h3>
-        <p>🏛️ Certified Pharmaceutical Forensics Division | Est. 2025</p>
-        <div style="margin-top: 15px;">
-            <span class="evidence-label">ISO 27001 Certified</span>
-            <span class="evidence-label">FDA Compliant</span>
-            <span class="evidence-label">HIPAA Secure</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-def create_lab_sidebar():
-    """Create forensic lab sidebar with equipment status."""
-    with st.sidebar:
-        st.markdown("## 🔬 Lab Equipment Status")
-        
-        # Equipment status indicators
-        equipment_status = {
-            "🔬 Spectral Analyzer": "ONLINE",
-            "📸 Digital Microscope": "ONLINE", 
-            "🧪 Chemical Database": "ONLINE",
-            "💊 Drug Registry": "ONLINE",
-            "🔍 AI Analysis Engine": "ONLINE",
-            "📊 Safety Protocols": "ACTIVE"
-        }
-        
-        for equipment, status in equipment_status.items():
-            if status == "ONLINE":
-                st.success(f"{equipment}: {status}")
-            else:
-                st.error(f"{equipment}: {status}")
-        
-        st.markdown("---")
-        st.markdown("## 📋 Evidence Log")
-        
-        # Session statistics
-        if 'case_number' not in st.session_state:
-            st.session_state.case_number = f"FSC-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        st.info(f"**Case ID:** {st.session_state.case_number}")
-        st.info(f"**Analyst:** Forensic AI System")
-        st.info(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        
-        # Analysis statistics
-        if 'analyses_completed' not in st.session_state:
-            st.session_state.analyses_completed = 0
-        
-        st.metric("Analyses Completed", st.session_state.analyses_completed)
-        
-        st.markdown("---")
-        st.markdown("## 🛡️ Security Protocols")
-        st.warning("⚠️ All evidence is encrypted and logged")
-        st.warning("🔒 Chain of custody maintained")
-        st.warning("📝 Audit trail recorded")
-
 def resize_image_for_display(image_file):
-    """Resize image for forensic display."""
+    """Resize image for display only, returns bytes."""
     try:
+        # Reset file pointer to beginning
         image_file.seek(0)
         img = Image.open(image_file)
+        # Reset again for later use
         image_file.seek(0)
         
         aspect_ratio = img.height / img.width
@@ -353,55 +327,28 @@ def resize_image_for_display(image_file):
         img.save(buf, format="PNG")
         return buf.getvalue()
     except Exception as e:
-        st.error(f"🔍 Image Processing Error: {e}")
+        st.error(f"🖼️ Error resizing image: {e}")
         return None
 
 def extract_composition_and_details(image_path):
-    """Conduct forensic analysis of pharmaceutical evidence."""
+    """Extract composition and related drug details from the tablet image using AI."""
     agent = get_agent()
     if agent is None:
         return None
 
     try:
-        # Create progress bar for forensic analysis
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        
-        # Simulate forensic analysis stages
-        stages = [
-            "🔍 Initializing spectral analysis...",
-            "📸 Processing digital microscopy...",
-            "🧪 Analyzing chemical composition...",
-            "💊 Cross-referencing drug databases...",
-            "📊 Generating safety profile...",
-            "📋 Compiling forensic report..."
-        ]
-        
-        for i, stage in enumerate(stages):
-            status_text.text(stage)
-            progress_bar.progress((i + 1) / len(stages))
-            time.sleep(0.8)
-        
-        # Actual analysis
-        status_text.text("🔬 Conducting comprehensive forensic analysis...")
-        response = agent.run(
-            "Conduct a comprehensive forensic pharmaceutical analysis of this evidence. Extract drug composition and provide detailed forensic documentation including uses, side effects, cost analysis, available commercial names, administration protocols, and complete safety profile including alcohol interactions, pregnancy safety, breastfeeding considerations, and operational safety warnings.",
-            images=[image_path],
-        )
-        
-        progress_bar.progress(1.0)
-        status_text.text("✅ Forensic analysis complete!")
-        time.sleep(1)
-        progress_bar.empty()
-        status_text.empty()
-        
-        return response.content.strip()
+        with st.spinner("🔬 Analyzing tablet image and retrieving comprehensive medical information..."):
+            response = agent.run(
+                "Extract the drug composition from this tablet image and provide its uses, side effects, cost, available tablet names/brands, usage instructions, and comprehensive safety information including alcohol interactions, pregnancy safety, breastfeeding considerations, and driving safety.",
+                images=[image_path],
+            )
+            return response.content.strip()
     except Exception as e:
-        st.error(f"🚨 Forensic Analysis Error: {e}")
+        st.error(f"🚨 Error extracting composition and details: {e}")
         return None
 
 def analyze_drug_interactions(drug_composition, additional_medications):
-    """Conduct forensic drug interaction analysis."""
+    """Analyze potential drug interactions."""
     if not additional_medications.strip():
         return None
     
@@ -410,39 +357,36 @@ def analyze_drug_interactions(drug_composition, additional_medications):
         return None
 
     try:
-        with st.spinner("🔍 Conducting forensic interaction analysis..."):
+        with st.spinner("🔍 Analyzing drug interactions..."):
             query = f"""
-            FORENSIC DRUG INTERACTION ANALYSIS:
-            Primary Evidence: {drug_composition}
-            Additional Substances: {additional_medications}
+            Analyze potential drug interactions between:
+            Primary Drug: {drug_composition}
+            Additional Medications: {additional_medications}
             
-            Conduct comprehensive interaction analysis with forensic precision:
-            - Classify interaction severity levels
-            - Document interaction mechanisms
-            - Assess clinical significance and risk factors
-            - Provide evidence-based safety recommendations
-            - Generate actionable protocols for safe co-administration
+            Provide detailed interaction analysis with severity levels and safety recommendations.
             """
             response = interaction_agent.run(query)
             return response.content.strip()
     except Exception as e:
-        st.error(f"🚨 Interaction Analysis Error: {e}")
+        st.error(f"🚨 Error analyzing drug interactions: {e}")
         return None
 
 def save_uploaded_file(uploaded_file):
-    """Secure evidence storage protocol."""
+    """Save the uploaded file to disk."""
     try:
+        # Get file extension from the uploaded file name
         file_extension = os.path.splitext(uploaded_file.name)[1]
+        
         with NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
             temp_file.write(uploaded_file.getvalue())
             temp_path = temp_file.name
         return temp_path
     except Exception as e:
-        st.error(f"🔒 Evidence Storage Error: {e}")
+        st.error(f"💾 Error saving uploaded file: {e}")
         return None
 
-def create_forensic_pdf(image_data, analysis_results, interaction_analysis=None, additional_meds=None):
-    """Generate forensic analysis report."""
+def create_pdf(image_data, analysis_results, interaction_analysis=None, additional_meds=None):
+    """Create a PDF report of the analysis."""
     try:
         buffer = BytesIO()
         pdf = SimpleDocTemplate(
@@ -454,140 +398,175 @@ def create_forensic_pdf(image_data, analysis_results, interaction_analysis=None,
             bottomMargin=72
         )
         
+        # Content to add to PDF
         content = []
-        styles = getSampleStyleSheet()
         
-        # Forensic title style
+        # Styles
+        styles = getSampleStyleSheet()
         title_style = ParagraphStyle(
-            'ForensicTitle',
+            'Title',
             parent=styles['Title'],
             fontSize=18,
             alignment=1,
             spaceAfter=12,
-            textColor=colors.Color(0.55, 0.45, 0.33)  # Brown color
+            textColor=colors.navy
         )
-        
         heading_style = ParagraphStyle(
-            'ForensicHeading',
+            'Heading',
             parent=styles['Heading2'],
             fontSize=14,
-            textColor=colors.Color(0.55, 0.45, 0.33),
+            textColor=colors.navy,
             spaceAfter=6
+        )
+        normal_style = ParagraphStyle(
+            'Body',
+            parent=styles['Normal'],
+            fontSize=12,
+            leading=14
+        )
+        disclaimer_style = ParagraphStyle(
+            'Disclaimer',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=colors.red,
+            borderWidth=1,
+            borderColor=colors.red,
+            borderPadding=5,
+            backColor=colors.pink,
+            alignment=1
         )
         
         # Title
-        content.append(Paragraph("🔬 FORENSIC PHARMACEUTICAL ANALYSIS REPORT", title_style))
+        content.append(Paragraph("🏥 MediScan - Comprehensive Drug Analysis Report", title_style))
         content.append(Spacer(1, 0.25*inch))
         
-        # Case information
-        case_info = f"""
-        <b>Case ID:</b> {st.session_state.case_number}<br/>
-        <b>Analysis Date:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}<br/>
-        <b>Analyst:</b> MediScan Forensic AI System<br/>
-        <b>Laboratory:</b> Digital Drug Analysis Bureau<br/>
-        <b>Certification:</b> ISO 27001, FDA Compliant
-        """
-        content.append(Paragraph(case_info, styles['Normal']))
+        # Disclaimer
+        content.append(Paragraph(
+            "⚠️ MEDICAL DISCLAIMER: This information is provided for educational purposes only and should not replace professional medical advice. "
+            "Always consult with a healthcare professional before making any medical decisions or changes to your medication regimen.",
+            disclaimer_style
+        ))
         content.append(Spacer(1, 0.25*inch))
         
-        # Continue with existing PDF generation logic...
-        # [Include rest of the PDF generation code from original]
+        # Date and time
+        current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        content.append(Paragraph(f"📅 Generated on: {current_datetime}", normal_style))
+        content.append(Spacer(1, 0.25*inch))
         
+        # Add image if available
+        if image_data:
+            try:
+                img_temp = BytesIO(image_data)
+                img = Image.open(img_temp)
+                img_width, img_height = img.size
+                aspect = img_height / float(img_width)
+                display_width = 4 * inch
+                display_height = display_width * aspect
+                
+                # Reset BytesIO position for ReportLab
+                img_temp.seek(0)
+                img_obj = ReportLabImage(img_temp, width=display_width, height=display_height)
+                content.append(Paragraph("📸 Analyzed Image:", heading_style))
+                content.append(img_obj)
+                content.append(Spacer(1, 0.25*inch))
+            except Exception as img_error:
+                st.warning(f"Could not add image to PDF: {img_error}")
+        
+        # Analysis results
+        content.append(Paragraph("🔬 Drug Analysis Results:", heading_style))
+        
+        # Format the analysis results for PDF
+        if analysis_results:
+            # Use regex to find sections
+            section_pattern = r"\*([\w\s]+):\*(.*?)(?=\*[\w\s]+:\*|$)"
+            matches = re.findall(section_pattern, analysis_results, re.DOTALL | re.IGNORECASE)
+            
+            if matches:
+                for section_title, section_content in matches:
+                    content.append(Paragraph(f"<b>{section_title.strip()}:</b>", normal_style))
+                    
+                    # Handle multiline content
+                    paragraphs = section_content.strip().split("\n")
+                    for para in paragraphs:
+                        if para.strip():
+                            # Escape HTML characters for ReportLab
+                            clean_para = para.strip().replace('<', '&lt;').replace('>', '&gt;')
+                            content.append(Paragraph(clean_para, normal_style))
+                    
+                    content.append(Spacer(1, 0.15*inch))
+        
+        # Drug interaction analysis
+        if interaction_analysis and additional_meds:
+            content.append(Paragraph("💊 Drug Interaction Analysis:", heading_style))
+            content.append(Paragraph(f"<b>Additional Medications:</b> {additional_meds}", normal_style))
+            content.append(Spacer(1, 0.1*inch))
+            
+            clean_interaction = interaction_analysis.replace('<', '&lt;').replace('>', '&gt;')
+            content.append(Paragraph(clean_interaction, normal_style))
+            content.append(Spacer(1, 0.25*inch))
+        
+        # Footer
+        content.append(Spacer(1, 0.5*inch))
+        content.append(Paragraph("© 2025 MediScan - Comprehensive Drug Analyzer | Powered by Gemini AI + Tavily", 
+                                ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=colors.gray)))
+        
+        # Build PDF
         pdf.build(content)
+        
+        # Get the PDF value from the buffer
         buffer.seek(0)
         return buffer.getvalue()
     except Exception as e:
-        st.error(f"📄 Forensic Report Generation Error: {e}")
+        st.error(f"📄 Error creating PDF: {e}")
         return None
 
-def display_forensic_results(analysis_results):
-    """Display results in forensic format."""
-    if not analysis_results:
+def display_tablet_names(tablet_names_text):
+    """Display tablet names in a formatted grid."""
+    if not tablet_names_text:
         return
     
-    # Create tabs for different analysis sections
-    tabs = st.tabs(["🔬 Primary Analysis", "🧪 Chemical Profile", "⚗️ Safety Analysis", "📊 Risk Assessment"])
+    # Try to parse the tablet names into a list
+    tablet_names = []
     
-    sections = [
-        "Evidence ID & Composition", "Commercial Identifiers", "Therapeutic Applications", 
-        "Administration Protocol", "Adverse Reactions", "Market Analysis", "Toxicology Profile",
-        "Operational Safety", "Contraindications"
-    ]
+    # Split by common delimiters
+    for delimiter in ['\n', ',', ';', '•', '-']:
+        if delimiter in tablet_names_text:
+            names = tablet_names_text.split(delimiter)
+            tablet_names = [name.strip() for name in names if name.strip()]
+            break
     
-    with tabs[0]:
-        st.markdown("### 🔬 Primary Forensic Analysis")
-        
-        # Display composition and identifiers
-        for section in ["Evidence ID & Composition", "Commercial Identifiers"]:
-            pattern = rf"\*{re.escape(section)}:\*(.*?)(?=\*(?:{'|'.join(re.escape(s) for s in sections)}):\*|$)"
-            match = re.search(pattern, analysis_results, re.DOTALL | re.IGNORECASE)
-            
-            if match:
-                content = match.group(1).strip()
-                st.markdown(f"""
-                <div class="evidence-card">
-                    <h4>🔍 {section}</h4>
-                    <p>{content}</p>
-                </div>
-                """, unsafe_allow_html=True)
+    # If no delimiters found, treat as single text
+    if not tablet_names:
+        tablet_names = [tablet_names_text.strip()]
     
-    with tabs[1]:
-        st.markdown("### 🧪 Chemical & Therapeutic Profile")
-        
-        for section in ["Therapeutic Applications", "Administration Protocol"]:
-            pattern = rf"\*{re.escape(section)}:\*(.*?)(?=\*(?:{'|'.join(re.escape(s) for s in sections)}):\*|$)"
-            match = re.search(pattern, analysis_results, re.DOTALL | re.IGNORECASE)
-            
-            if match:
-                content = match.group(1).strip()
-                st.markdown(f"""
-                <div class="lab-equipment">
-                    <h4>⚗️ {section}</h4>
-                    <p>{content}</p>
-                </div>
-                """, unsafe_allow_html=True)
+    # Display in a grid layout
+    if len(tablet_names) > 1:
+        # Create a grid of tablet names
+        grid_html = '<div class="tablet-grid">'
+        for name in tablet_names:
+            if name:
+                grid_html += f'<div class="tablet-item">🏷️ {name}</div>'
+        grid_html += '</div>'
+        st.markdown(grid_html, unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="tablet-item">🏷️ {tablet_names[0] if tablet_names else tablet_names_text}</div>', unsafe_allow_html=True)
+
+def display_safety_info(content, safety_type):
+    """Display safety information with appropriate styling."""
+    if not content:
+        return
     
-    with tabs[2]:
-        st.markdown("### ⚗️ Safety & Toxicology Analysis")
-        
-        safety_sections = ["Adverse Reactions", "Toxicology Profile", "Operational Safety"]
-        for section in safety_sections:
-            pattern = rf"\*{re.escape(section)}:\*(.*?)(?=\*(?:{'|'.join(re.escape(s) for s in sections)}):\*|$)"
-            match = re.search(pattern, analysis_results, re.DOTALL | re.IGNORECASE)
-            
-            if match:
-                content = match.group(1).strip()
-                
-                # Color coding for safety levels
-                if "safe" in content.lower():
-                    st.success(f"✅ {section}: {content}")
-                elif "avoid" in content.lower() or "contraindicated" in content.lower():
-                    st.error(f"❌ {section}: {content}")
-                elif "caution" in content.lower():
-                    st.warning(f"⚠️ {section}: {content}")
-                else:
-                    st.info(f"ℹ️ {section}: {content}")
-    
-    with tabs[3]:
-        st.markdown("### 📊 Risk Assessment & Market Analysis")
-        
-        risk_sections = ["Market Analysis", "Contraindications"]
-        for section in risk_sections:
-            pattern = rf"\*{re.escape(section)}:\*(.*?)(?=\*(?:{'|'.join(re.escape(s) for s in sections)}):\*|$)"
-            match = re.search(pattern, analysis_results, re.DOTALL | re.IGNORECASE)
-            
-            if match:
-                content = match.group(1).strip()
-                st.markdown(f"""
-                <div class="metric-container">
-                    <h4>📈 {section}</h4>
-                    <p>{content}</p>
-                </div>
-                """, unsafe_allow_html=True)
+    # Determine safety level and apply appropriate styling
+    if "safe" in content.lower() or "no interaction" in content.lower():
+        st.markdown(f'<div class="safety-success">✅ {content}</div>', unsafe_allow_html=True)
+    elif "avoid" in content.lower() or "contraindicated" in content.lower() or "not recommended" in content.lower():
+        st.markdown(f'<div class="safety-danger">❌ {content}</div>', unsafe_allow_html=True)
+    elif "caution" in content.lower() or "monitor" in content.lower() or "consult" in content.lower():
+        st.markdown(f'<div class="safety-warning">⚠️ {content}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="safety-success">ℹ️ {content}</div>', unsafe_allow_html=True)
 
 def main():
-    """Main forensic application interface."""
-    
     # Initialize session state
     if 'analyze_clicked' not in st.session_state:
         st.session_state.analyze_clicked = False
@@ -602,94 +581,108 @@ def main():
     if 'additional_medications' not in st.session_state:
         st.session_state.additional_medications = ""
 
-    # Create forensic header
-    create_forensic_header()
-    
-    # Create lab sidebar
-    create_lab_sidebar()
-    
-    # Legal disclaimer
+    # Professional Header
     st.markdown("""
-    <div class="evidence-card">
-        <h3>⚖️ LEGAL & MEDICAL DISCLAIMER</h3>
-        <p><strong>FORENSIC ANALYSIS NOTICE:</strong> This forensic analysis is provided for educational and investigative purposes only. 
-        Results should not replace professional medical advice, diagnosis, or treatment. All pharmaceutical evidence analysis 
-        follows digital forensic protocols but requires clinical validation. Chain of custody and evidence integrity maintained 
-        according to forensic standards.</p>
+    <div class="main-header">
+        <h1>🏥 MediScan</h1>
+        <p>Advanced Drug Composition Analyzer & Safety Checker</p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Main analysis interface
-    col1, col2 = st.columns([1, 1])
+    # Medical Disclaimer
+    st.markdown("""
+    <div class="disclaimer">
+        <h4>⚠️ MEDICAL DISCLAIMER</h4>
+        <p>The information provided by MediScan is for educational and informational purposes only and is not intended to replace professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition, medication, or drug interactions.</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    with col1:
-        st.markdown("## 📤 Evidence Submission")
-        
-        # Evidence upload
-        st.markdown("""
-        <div class="lab-equipment">
-            <h4>🔍 Digital Evidence Upload</h4>
-            <p>Submit high-resolution pharmaceutical evidence for forensic analysis</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
+    # Upload Section
+    st.markdown("""
+    <div class="card">
+        <h3>📤 Upload Tablet Image</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # File upload in a styled container
+    with st.container():
+        st.markdown('<div class="upload-section">', unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
-            "📸 Upload Pharmaceutical Evidence",
+            "Choose a clear image of the tablet or its packaging",
             type=["jpg", "jpeg", "png", "webp"],
-            help="Submit clear, high-resolution images of pharmaceutical evidence"
+            help="Upload a high-quality image for best analysis results"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         if uploaded_file:
-            # Display evidence with forensic styling
-            resized_image = resize_image_for_display(uploaded_file)
-            if resized_image:
-                st.markdown('<div class="scanning-animation">', unsafe_allow_html=True)
-                st.image(resized_image, caption="📸 Evidence Under Analysis", width=MAX_IMAGE_WIDTH)
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Evidence metadata
+            # Display uploaded image with file info
+            col1, col2 = st.columns([2, 1])
+            
+            with col1:
+                resized_image = resize_image_for_display(uploaded_file)
+                if resized_image:
+                    st.image(resized_image, caption="Uploaded Image", use_column_width=True)
+            
+            with col2:
                 file_size = len(uploaded_file.getvalue()) / 1024
                 st.markdown(f"""
-                <div class="evidence-card">
-                    <h4>🏷️ Evidence Metadata</h4>
-                    <p><strong>Filename:</strong> {uploaded_file.name}</p>
+                <div class="file-info">
+                    <h4>📋 File Information</h4>
+                    <p><strong>Name:</strong> {uploaded_file.name}</p>
                     <p><strong>Size:</strong> {file_size:.1f} KB</p>
                     <p><strong>Type:</strong> {uploaded_file.type}</p>
-                    <p><strong>Status:</strong> <span class="evidence-label">AUTHENTICATED</span></p>
                 </div>
                 """, unsafe_allow_html=True)
-        
-        # Additional medications
-        st.markdown("## 💊 Additional Substance Analysis")
-        additional_meds = st.text_area(
-            "🧪 Enter additional medications for interaction analysis:",
-            placeholder="e.g., Aspirin 75mg daily, Metformin 500mg twice daily, Lisinopril 10mg once daily",
-            help="List all medications, supplements, and substances for comprehensive interaction analysis",
-            key="additional_medications_input"
-        )
-        
-        # Analysis button
-        if uploaded_file and st.button("🔬 Initiate Forensic Analysis"):
+    
+    # Additional Medications Section
+    st.markdown("""
+    <div class="card">
+        <h3>💊 Additional Medications (Optional)</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    additional_meds = st.text_area(
+        "Enter any other medications you are currently taking:",
+        placeholder="e.g., Aspirin 75mg daily, Metformin 500mg twice daily, Lisinopril 10mg once daily",
+        help="Include medication names, dosages, and frequency for comprehensive interaction analysis",
+        key="additional_medications_input",
+        height=100
+    )
+    
+    # Analyze Button
+    if uploaded_file:
+        if st.button("🔬 Analyze Tablet & Check Safety", key="analyze_button"):
             st.session_state.analyze_clicked = True
             st.session_state.additional_medications = additional_meds
-            st.session_state.analyses_completed += 1
             
-            # Save and analyze evidence
+            # Save uploaded file and analyze
             temp_path = save_uploaded_file(uploaded_file)
             if temp_path:
                 try:
+                    # Analysis progress
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    
+                    status_text.text("🔬 Processing image...")
+                    progress_bar.progress(25)
+                    
                     extracted_info = extract_composition_and_details(temp_path)
+                    progress_bar.progress(70)
                     
                     if extracted_info:
+                        # Store results in session state
                         st.session_state.analysis_results = extracted_info
                         st.session_state.original_image = uploaded_file.getvalue()
                         
-                        # Extract composition for interaction analysis
-                        composition_match = re.search(r"\*(?:Evidence ID & Composition|Composition):\*(.*?)(?=\*[\w\s]+:\*|$)", extracted_info, re.DOTALL | re.IGNORECASE)
+                        # Extract drug composition for interaction analysis
+                        composition_match = re.search(r"\*Composition:\*(.*?)(?=\*[\w\s]+:\*|$)", extracted_info, re.DOTALL | re.IGNORECASE)
                         if composition_match:
                             st.session_state.drug_composition = composition_match.group(1).strip()
                         
-                        # Analyze interactions
+                        progress_bar.progress(85)
+                        status_text.text("🔍 Analyzing drug interactions...")
+                        
+                        # Analyze drug interactions if additional medications provided
                         if additional_meds.strip():
                             interaction_result = analyze_drug_interactions(
                                 st.session_state.drug_composition or "Unknown composition",
@@ -697,312 +690,237 @@ def main():
                             )
                             st.session_state.interaction_analysis = interaction_result
                         
-                        st.success("✅ Forensic analysis completed successfully!")
+                        progress_bar.progress(100)
+                        status_text.text("✅ Analysis completed!")
                         
-                        # Success animation
-                        st.balloons()
+                        # Clear progress indicators after a moment
+                        import time
+                        time.sleep(1)
+                        progress_bar.empty()
+                        status_text.empty()
                         
+                        st.success("🎉 Comprehensive analysis completed successfully!")
                     else:
-                        st.error("❌ Analysis failed. Evidence may be corrupted or unclear.")
-                        
+                        st.error("❌ Analysis failed. Please try with a clearer image.")
+                    
                 except Exception as e:
-                    st.error(f"🚨 Forensic Analysis Error: {e}")
+                    st.error(f"🚨 Analysis failed: {e}")
                 finally:
+                    # Clean up temp file
                     if os.path.exists(temp_path):
                         os.unlink(temp_path)
     
-    with col2:
-        st.markdown("## 📊 Forensic Analysis Results")
+    # Display Results
+    if st.session_state.analysis_results:
+        st.markdown("""
+        <div class="card">
+            <h3>📊 Comprehensive Analysis Results</h3>
+        </div>
+        """, unsafe_allow_html=True)
         
-        if st.session_state.analysis_results:
-            display_forensic_results(st.session_state.analysis_results)
+        # Parse and display results
+        analysis_text = st.session_state.analysis_results
+        
+        # Enhanced sections list
+        sections = [
+            ("Composition", "🧬"),
+            ("Available Tablet Names", "🏷️"),
+            ("Uses", "💊"),
+            ("How to Use", "📋"),
+            ("Side Effects", "⚠️"),
+            ("Cost", "💰"),
+            ("Safety with Alcohol", "🍺"),
+            ("Pregnancy Safety", "🤱"),
+            ("Breastfeeding Safety", "🍼"),
+            ("Driving Safety", "🚗"),
+            ("General Safety Advice", "🛡️")
+        ]
+        
+        for section_name, icon in sections:
+            # Pattern to match sections
+            pattern = rf"\*{re.escape(section_name)}:\*(.*?)(?=\*(?:{'|'.join(re.escape(s) for s, _ in sections)}):\*|$)"
+            match = re.search(pattern, analysis_text, re.DOTALL | re.IGNORECASE)
             
-            # Drug interaction analysis
-            if st.session_state.interaction_analysis:
-                st.markdown("### 💊 Drug Interaction Analysis")
-                st.markdown(f"**Additional Substances:** {st.session_state.additional_medications}")
+            if match:
+                content = match.group(1).strip()
                 
-                interaction_text = st.session_state.interaction_analysis
-                
-                # Risk level assessment
-                if "critical" in interaction_text.lower() or "severe" in interaction_text.lower():
-                    st.error("🚨 **CRITICAL INTERACTION DETECTED**")
-                elif "major" in interaction_text.lower():
-                    st.error("⚠️ **MAJOR INTERACTION**")
-                elif "moderate" in interaction_text.lower():
-                    st.warning("⚠️ **MODERATE INTERACTION**")
-                elif "minor" in interaction_text.lower():
-                    st.info("ℹ️ **MINOR INTERACTION**")
-                else:
-                    st.success("✅ **LOW INTERACTION RISK**")
-                
+                # Section container
                 st.markdown(f"""
-                <div class="evidence-card">
-                    <h4>🧪 Interaction Analysis</h4>
-                    <p>{interaction_text}</p>
+                <div class="section-header">
+                    <h4>{icon} {section_name}</h4>
                 </div>
                 """, unsafe_allow_html=True)
-            
-            # Download forensic report
-            if st.session_state.original_image:
-                st.markdown("### 📄 Forensic Documentation")
                 
-                pdf_bytes = create_forensic_pdf(
-                    st.session_state.original_image,
-                    st.session_state.analysis_results,
-                    st.session_state.interaction_analysis,
-                    st.session_state.additional_medications
+                # Special handling for different sections
+                if section_name == "Available Tablet Names":
+                    display_tablet_names(content)
+                elif section_name in ["Safety with Alcohol", "Pregnancy Safety", "Breastfeeding Safety", "Driving Safety"]:
+                    display_safety_info(content, section_name)
+                else:
+                    st.markdown(f'<div class="analysis-section">{content}</div>', unsafe_allow_html=True)
+        
+        # Display drug interaction analysis if available
+        if st.session_state.interaction_analysis:
+            st.markdown("""
+            <div class="card">
+                <h3>💊 Drug Interaction Analysis</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown(f"**Additional Medications:** {st.session_state.additional_medications}")
+            
+            # Parse interaction analysis for severity levels
+            interaction_text = st.session_state.interaction_analysis
+            
+            if "severe" in interaction_text.lower() or "major" in interaction_text.lower():
+                st.markdown('<div class="safety-danger">🚨 <strong>SEVERE/MAJOR INTERACTION DETECTED</strong></div>', unsafe_allow_html=True)
+            elif "moderate" in interaction_text.lower():
+                st.markdown('<div class="safety-warning">⚠️ <strong>MODERATE INTERACTION</strong></div>', unsafe_allow_html=True)
+            elif "minor" in interaction_text.lower():
+                st.markdown('<div class="safety-success">ℹ️ <strong>MINOR INTERACTION</strong></div>', unsafe_allow_html=True)
+            else:
+                st.markdown('<div class="safety-success">✅ <strong>LOW INTERACTION RISK</strong></div>', unsafe_allow_html=True)
+            
+            st.markdown(f'<div class="analysis-section">{interaction_text}</div>', unsafe_allow_html=True)
+        
+        # PDF Download Section
+        if st.session_state.original_image:
+            st.markdown("""
+            <div class="card">
+                <h3>📄 Download Comprehensive Report</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            pdf_bytes = create_pdf(
+                st.session_state.original_image,
+                st.session_state.analysis_results,
+                st.session_state.interaction_analysis,
+                st.session_state.additional_medications
+            )
+            
+            if pdf_bytes:
+                download_filename = f"mediscan_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                st.download_button(
+                    label="📥 Download Complete PDF Report",
+                    data=pdf_bytes,
+                    file_name=download_filename,
+                    mime="application/pdf",
+                    help="Download a comprehensive PDF report with all analysis results and safety information",
+                    key="pdf_download"
                 )
-                
-                if pdf_bytes:
-                    download_filename = f"forensic_analysis_{st.session_state.case_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.download_button(
-                            label="📥 Download Forensic Report",
-                            data=pdf_bytes,
-                            file_name=download_filename,
-                            mime="application/pdf",
-                            help="Download complete forensic analysis report"
-                        )
-                    
-                    with col2:
-                        st.markdown(f"""
-                        <div class="metric-container">
-                            <h4>📋 Report Details</h4>
-                            <p><strong>Case:</strong> {st.session_state.case_number}</p>
-                            <p><strong>Status:</strong> <span class="evidence-label">COMPLETE</span></p>
-                        </div>
-                        """, unsafe_allow_html=True)
         
-        else:
+        # Safety Reminders Section
+        st.markdown("""
+        <div class="card">
+            <h3>🛡️ Important Safety Reminders</h3>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        safety_col1, safety_col2 = st.columns(2)
+        
+        with safety_col1:
             st.markdown("""
-            <div class="lab-equipment">
-                <h3>🔬 Awaiting Evidence</h3>
-                <p>Submit pharmaceutical evidence to begin forensic analysis</p>
-                <div style="text-align: center; margin: 20px;">
-                    <div style="font-size: 48px; opacity: 0.5;">🔍</div>
-                    <p><em>Lab equipment ready for analysis</em></p>
+            <div class="analysis-section">
+                <h4>🍺 Alcohol Interaction Guidelines</h4>
+                <ul>
+                    <li>Always check specific alcohol interaction information above</li>
+                    <li>Some medications can cause severe reactions with alcohol</li>
+                    <li>Consult your doctor about alcohol consumption while on medication</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div class="analysis-section">
+                <h4>🤱 Pregnancy & Breastfeeding Safety</h4>
+                <ul>
+                    <li>Medication safety varies by trimester</li>
+                    <li>Many drugs can pass through breast milk</li>
+                    <li>Always inform healthcare providers about pregnancy/breastfeeding</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with safety_col2:
+            st.markdown("""
+            <div class="analysis-section">
+                <h4>🚗 Driving Safety Guidelines</h4>
+                <ul>
+                    <li>Some medications cause drowsiness or dizziness</li>
+                    <li>Check driving safety information above</li>
+                    <li>Avoid driving if you feel impaired</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div class="analysis-section">
+                <h4>💊 Drug Interaction Prevention</h4>
+                <ul>
+                    <li>Provide complete medication lists to healthcare providers</li>
+                    <li>Include over-the-counter drugs and supplements</li>
+                    <li>Check for interactions before starting new medications</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    else:
+        # Welcome message when no results
+        st.markdown("""
+        <div class="card">
+            <h3>🎯 How to Use MediScan</h3>
+            <div class="analysis-section">
+                <ol>
+                    <li><strong>Upload Image:</strong> Choose a clear photo of your tablet or its packaging</li>
+                    <li><strong>Add Medications:</strong> Optionally list other medications you're taking</li>
+                    <li><strong>Analyze:</strong> Click the analyze button to get comprehensive results</li>
+                    <li><strong>Review Results:</strong> Get detailed information about composition, uses, and safety</li>
+                    <li><strong>Download Report:</strong> Save a PDF report for your records</li>
+                </ol>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Features overview
+        st.markdown("""
+        <div class="card">
+            <h3>✨ Key Features</h3>
+            <div class="analysis-section">
+                <div class="tablet-grid">
+                    <div class="tablet-item">
+                        <h4>🔬 AI-Powered Analysis</h4>
+                        <p>Advanced image recognition for accurate composition identification</p>
+                    </div>
+                    <div class="tablet-item">
+                        <h4>💊 Comprehensive Drug Info</h4>
+                        <p>Detailed information about uses, dosage, and side effects</p>
+                    </div>
+                    <div class="tablet-item">
+                        <h4>🛡️ Safety Checks</h4>
+                        <p>Pregnancy, alcohol, and driving safety assessments</p>
+                    </div>
+                    <div class="tablet-item">
+                        <h4>🔍 Interaction Analysis</h4>
+                        <p>Check for dangerous drug interactions</p>
+                    </div>
+                    <div class="tablet-item">
+                        <h4>📄 PDF Reports</h4>
+                        <p>Download comprehensive analysis reports</p>
+                    </div>
+                    <div class="tablet-item">
+                        <h4>💰 Cost Information</h4>
+                        <p>Get pricing information for medications</p>
+                    </div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
-    
-    # Comprehensive Safety Information Section
-    if st.session_state.analysis_results:
-        st.markdown("---")
-        st.markdown("## 🛡️ Comprehensive Safety Protocols")
-        
-        # Interactive safety dashboard
-        safety_tabs = st.tabs(["🍺 Alcohol", "🤱 Pregnancy", "🍼 Breastfeeding", "🚗 Operation", "⚠️ Contraindications"])
-        
-        with safety_tabs[0]:
-            st.markdown("""
-            <div class="evidence-card">
-                <h3>🍺 Alcohol Interaction Protocol</h3>
-                <ul>
-                    <li>📊 Review specific alcohol interaction data above</li>
-                    <li>🚨 Some medications cause severe alcohol reactions</li>
-                    <li>⚖️ Legal implications of alcohol-drug interactions</li>
-                    <li>🏥 Emergency protocols for adverse reactions</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with safety_tabs[1]:
-            st.markdown("""
-            <div class="evidence-card">
-                <h3>🤱 Pregnancy Safety Analysis</h3>
-                <ul>
-                    <li>📅 Trimester-specific risk assessments</li>
-                    <li>🧬 Teratogenic risk evaluation</li>
-                    <li>⚖️ FDA pregnancy categories</li>
-                    <li>🏥 Maternal-fetal medicine consultation recommended</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with safety_tabs[2]:
-            st.markdown("""
-            <div class="evidence-card">
-                <h3>🍼 Breastfeeding Compatibility</h3>
-                <ul>
-                    <li>🥛 Milk transfer analysis</li>
-                    <li>👶 Infant risk assessment</li>
-                    <li>⏰ Timing strategies for medication</li>
-                    <li>🏥 Lactation consultant coordination</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with safety_tabs[3]:
-            st.markdown("""
-            <div class="evidence-card">
-                <h3>🚗 Operational Safety Assessment</h3>
-                <ul>
-                    <li>🧠 Cognitive impairment evaluation</li>
-                    <li>👁️ Visual disturbance monitoring</li>
-                    <li>⚖️ Legal driving restrictions</li>
-                    <li>🏭 Heavy machinery operation warnings</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with safety_tabs[4]:
-            st.markdown("""
-            <div class="evidence-card">
-                <h3>⚠️ Contraindications & Warnings</h3>
-                <ul>
-                    <li>🚫 Absolute contraindications</li>
-                    <li>⚠️ Relative contraindications</li>
-                    <li>📋 Medical condition interactions</li>
-                    <li>🏥 Monitoring requirements</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Interactive Safety Quiz/Checker
-    if st.session_state.analysis_results:
-        st.markdown("---")
-        st.markdown("## 🧪 Interactive Safety Assessment")
-        
-        with st.expander("🔍 Personal Safety Risk Calculator", expanded=False):
-            st.markdown("**Answer these questions for personalized risk assessment:**")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                age = st.slider("Age", 18, 100, 35)
-                weight = st.slider("Weight (kg)", 40, 150, 70)
-                alcohol_use = st.selectbox("Alcohol consumption", ["None", "Occasional", "Regular", "Heavy"])
-                
-            with col2:
-                pregnancy = st.selectbox("Pregnancy status", ["Not applicable", "Pregnant", "Breastfeeding", "Planning pregnancy"])
-                liver_condition = st.checkbox("Liver conditions")
-                kidney_condition = st.checkbox("Kidney conditions")
-                
-            if st.button("🧮 Calculate Risk Profile"):
-                risk_score = 0
-                
-                # Simple risk calculation
-                if alcohol_use == "Heavy":
-                    risk_score += 3
-                elif alcohol_use == "Regular":
-                    risk_score += 2
-                elif alcohol_use == "Occasional":
-                    risk_score += 1
-                
-                if pregnancy in ["Pregnant", "Breastfeeding"]:
-                    risk_score += 2
-                
-                if liver_condition:
-                    risk_score += 2
-                if kidney_condition:
-                    risk_score += 2
-                
-                if age > 65:
-                    risk_score += 1
-                
-                # Display risk assessment
-                if risk_score >= 6:
-                    st.error("🚨 **HIGH RISK** - Immediate medical consultation required")
-                elif risk_score >= 4:
-                    st.warning("⚠️ **MODERATE RISK** - Medical supervision recommended")
-                elif risk_score >= 2:
-                    st.info("ℹ️ **LOW-MODERATE RISK** - Monitor for side effects")
-                else:
-                    st.success("✅ **LOW RISK** - Standard precautions apply")
-                
-                st.markdown(f"""
-                <div class="metric-container">
-                    <h4>📊 Risk Assessment Summary</h4>
-                    <p><strong>Risk Score:</strong> {risk_score}/10</p>
-                    <p><strong>Recommendation:</strong> Consult healthcare provider for personalized advice</p>
-                </div>
-                """, unsafe_allow_html=True)
-    
-    # Lab Equipment Status Dashboard
-    st.markdown("---")
-    st.markdown("## 🔬 Laboratory Status Dashboard")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric(
-            label="🔬 Analysis Completed",
-            value=st.session_state.analyses_completed,
-            delta="Active"
-        )
-    
-    with col2:
-        st.metric(
-            label="🧪 Lab Uptime",
-            value="99.9%",
-            delta="0.1%"
-        )
-    
-    with col3:
-        st.metric(
-            label="📊 Accuracy Rate",
-            value="98.7%",
-            delta="1.2%"
-        )
-    
-    with col4:
-        st.metric(
-            label="⚡ Response Time",
-            value="2.3s",
-            delta="-0.5s"
-        )
-    
-    # Real-time system status
-    st.markdown("### 🖥️ System Status Monitor")
-    
-    status_cols = st.columns(3)
-    
-    with status_cols[0]:
-        st.markdown("""
-        <div class="lab-equipment">
-            <h4>🔍 Analysis Engine</h4>
-            <p>Status: <span class="evidence-label">ONLINE</span></p>
-            <p>Load: 23%</p>
-            <p>Queue: 0 pending</p>
         </div>
         """, unsafe_allow_html=True)
     
-    with status_cols[1]:
-        st.markdown("""
-        <div class="lab-equipment">
-            <h4>🗄️ Database Systems</h4>
-            <p>Status: <span class="evidence-label">ONLINE</span></p>
-            <p>Sync: 100%</p>
-            <p>Latency: 12ms</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with status_cols[2]:
-        st.markdown("""
-        <div class="lab-equipment">
-            <h4>🔒 Security Systems</h4>
-            <p>Status: <span class="evidence-label">SECURE</span></p>
-            <p>Encryption: AES-256</p>
-            <p>Last audit: Today</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Footer with forensic branding
-    st.markdown("---")
+    # Footer
     st.markdown("""
-    <div class="forensic-header" style="margin-top: 40px;">
-        <h3>🏛️ MediScan Forensic Laboratory</h3>
-        <p>Digital Drug Analysis & Safety Investigation Bureau</p>
-        <p>© 2025 | Powered by Gemini AI + Tavily | ISO 27001 Certified</p>
-        <div style="margin-top: 10px;">
-            <span class="evidence-label">24/7 Operations</span>
-            <span class="evidence-label">Forensic Grade Analysis</span>
-            <span class="evidence-label">Chain of Custody</span>
-            <span class="evidence-label">Legal Documentation</span>
-        </div>
+    <div style="text-align: center; padding: 2rem; margin-top: 3rem; border-top: 1px solid #e1e8ed; color: #6c757d;">
+        <p>© 2025 MediScan - Comprehensive Drug Analyzer | Powered by Gemini AI + Tavily</p>
+        <p><small>Professional healthcare technology for informed medication decisions</small></p>
     </div>
     """, unsafe_allow_html=True)
 
