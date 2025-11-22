@@ -18,8 +18,8 @@ from reportlab.lib.units import inch
 from datetime import datetime
 import re
 
-# Set page configuration
-st.set_config(
+# FIX APPLIED: Changed st.set_config to st.set_page_config
+st.set_page_config(
     page_title="MediScan - Drug Composition Analyzer",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -563,7 +563,7 @@ def create_pdf(image_data, analysis_results, interaction_analysis=None, addition
         # Analysis results
         content.append(Paragraph("🔬 Drug Analysis Results:", heading_style))
         
-        # PDF Parsing Logic (Updated for new format if needed)
+        # PDF Parsing Logic (Updated for new '|||' separator)
         if analysis_results:
              # Use the new radical separator '|||' to split sections
             sections = analysis_results.strip().split('|||')
