@@ -317,14 +317,16 @@ Additionally, once a drug composition is identified, retrieve and display its us
 Ensure that you fetch accurate and specific details instead of generic placeholders.
 """
 
+# START OF CRITICAL CHANGE: REVISED INSTRUCTIONS FOR STRUCTURE AND CONTENT
 INSTRUCTIONS = """
-- Extract only the drug composition from the tablet image.
-- Use this composition to fetch and return detailed information from trusted medical sources.
-- For tablet names, search for brand names, generic names, and commercial names that contain the identified composition.
-- Provide comprehensive safety information including alcohol interactions, pregnancy safety, breastfeeding considerations, and driving safety.
-- Return all information in a structured format:
+- Extract the drug composition from the tablet image.
+- Use this composition to fetch and return detailed, medically accurate information from trusted sources.
+- **CRITICAL FORMATTING:** Return ALL information in a strict key-value format using asterisks. Do NOT use bullet points, numbered lists, or fragmented text outside of the section content.
+- **CRITICAL CONTENT:** Provide only medical/scientific uses and avoid manufacturer promotional language.
+
+- Return all information in this exact structured format:
   *Composition:* <composition>
-  *Uses:* <accurate uses based on online sources>  <-- MOVED UP FOR PRIORITY
+  *Uses:* <accurate medical/scientific uses based on online sources>
   *Available Tablet Names:* <list of brand names and generic names that contain this composition>
   *How to Use:* <detailed dosage instructions, timing, with or without food>
   *Side Effects:* <verified side effects>
@@ -335,6 +337,7 @@ INSTRUCTIONS = """
   *Driving Safety:* <effects on driving ability>
   *General Safety Advice:* <additional precautions and contraindications>
 """
+# END OF CRITICAL CHANGE
 
 DRUG_INTERACTION_PROMPT = """
 You are a pharmaceutical expert specializing in drug interactions and safety analysis.
@@ -769,7 +772,7 @@ def main():
             # Enhanced sections list with proper organization
             sections = [
                 ("Composition", "🧬", "composition"),
-                ("Uses", "🎯", "uses"), # MOVED UP IN SECTIONS LIST FOR DISPLAY
+                ("Uses", "🎯", "uses"), 
                 ("Available Tablet Names", "💊", "tablet_names"),
                 ("How to Use", "📋", "usage"),
                 ("Side Effects", "⚠️", "side_effects"),
@@ -803,7 +806,7 @@ def main():
                         st.markdown(f"**{content}**")
                     elif section_type == "uses":
                         # Format uses as bullet points if multiple
-                        if '\n' in content or ',' in content:
+                        if '\n' in content or ',' in content or '•' in content: # Added '•' check for robustness
                             uses_list = content.replace('\n', ', ').split(',')
                             for use in uses_list:
                                 if use.strip():
@@ -812,7 +815,7 @@ def main():
                             st.markdown(content)
                     elif section_type == "side_effects":
                         # Format side effects with warning styling
-                        if '\n' in content or ',' in content:
+                        if '\n' in content or ',' in content or '•' in content: # Added '•' check for robustness
                             effects_list = content.replace('\n', ', ').split(',')
                             for effect in effects_list:
                                 if effect.strip():
