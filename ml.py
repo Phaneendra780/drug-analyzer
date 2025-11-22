@@ -19,7 +19,7 @@ from datetime import datetime
 import re
 
 # Set page configuration
-st.set_page_config(
+st.set_config(
     page_title="MediScan - Drug Composition Analyzer",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -320,25 +320,35 @@ Additionally, once a drug composition is identified, retrieve and display its us
 Ensure that you fetch accurate and specific details instead of generic placeholders.
 """
 
-# START OF CRITICAL CHANGE: INSTRUCTIONS REFINEMENT
+# START OF CRITICAL CHANGE: RADICAL INSTRUCTIONS REFINEMENT
 INSTRUCTIONS = """
 - Extract the drug composition from the tablet image.
 - Use this composition to fetch and return detailed, medically accurate information from trusted sources.
 
-- **CRITICAL FORMATTING:** Return ALL information in a strict key-value format using asterisks. Do NOT use any list markers (hyphens, bullet points, etc.) or fragmented text outside of the section content. Use only standard line breaks for new points within a section.
+- **RADICAL FORMATTING ENFORCEMENT:** You MUST separate each section with a new line containing ONLY '|||'. Do NOT use asterisks (*) for section headers. Do NOT use any list markers (hyphens, bullet points, asterisks, etc.). Use only standard line breaks for new points within a section.
 
 - Return all information in this exact structured format:
-  *Composition:* <composition>
-  *Uses:* <accurate medical/scientific uses based on clinical indications>
-  *Available Tablet Names:* <list of brand names and generic names that contain this composition>
-  *How to Use:* <detailed dosage instructions, timing, with or without food. If conflicting dosages are found, state the lowest medically accepted dose first, and add a CRITICAL DISCLAIMER to follow the specific dose listed on the tablet packaging.>
-  *Side Effects:* <verified side effects, categorized by severity if possible>
-  *Cost:* <actual cost from trusted sources>
-  *Safety with Alcohol:* <specific advice about alcohol consumption>
-  *Pregnancy Safety:* <pregnancy category and safety advice>
-  *Breastfeeding Safety:* <safety for nursing mothers>
-  *Driving Safety:* <effects on driving ability>
-  *General Safety Advice:* <additional precautions and contraindications>
+Composition: <composition>
+|||
+Uses: <accurate medical/scientific uses based on clinical indications>
+|||
+Available Tablet Names: <list of brand names and generic names that contain this composition>
+|||
+How to Use: <detailed dosage instructions, timing, with or without food. If conflicting dosages are found, state the lowest medically accepted dose first, and add a CRITICAL DISCLAIMER to follow the specific dose listed on the tablet packaging.>
+|||
+Side Effects: <verified side effects, categorized by severity if possible>
+|||
+Cost: <actual cost from trusted sources>
+|||
+Safety with Alcohol: <specific advice about alcohol consumption>
+|||
+Pregnancy Safety: <pregnancy category and safety advice>
+|||
+Breastfeeding Safety: <safety for nursing mothers>
+|||
+Driving Safety: <effects on driving ability>
+|||
+General Safety Advice: <additional precautions and contraindications>
 """
 # END OF CRITICAL CHANGE
 
@@ -463,6 +473,8 @@ def save_uploaded_file(uploaded_file):
 
 def create_pdf(image_data, analysis_results, interaction_analysis=None, additional_meds=None):
     """Create a PDF report of the analysis."""
+    # NOTE: PDF creation uses the old logic, as it relies on the final parsed output
+    # If the output parsing logic below changes, this PDF function must also be updated.
     try:
         buffer = BytesIO()
         pdf = SimpleDocTemplate(
@@ -551,21 +563,23 @@ def create_pdf(image_data, analysis_results, interaction_analysis=None, addition
         # Analysis results
         content.append(Paragraph("🔬 Drug Analysis Results:", heading_style))
         
-        # Format the analysis results for PDF
+        # PDF Parsing Logic (Updated for new format if needed)
         if analysis_results:
-            # Use regex to find sections
-            section_pattern = r"\*([\w\s]+):\*(.*?)(?=\*[\w\s]+:\*|$)"
-            matches = re.findall(section_pattern, analysis_results, re.DOTALL | re.IGNORECASE)
+             # Use the new radical separator '|||' to split sections
+            sections = analysis_results.strip().split('|||')
             
-            if matches:
-                for section_title, section_content in matches:
-                    content.append(Paragraph(f"<b>{section_title.strip()}:</b>", normal_style))
+            for section in sections:
+                if ':' in section:
+                    title, content_text = section.split(':', 1)
+                    title = title.strip()
+                    content_text = content_text.strip()
+                    
+                    content.append(Paragraph(f"<b>{title}:</b>", normal_style))
                     
                     # Handle multiline content
-                    paragraphs = section_content.strip().split("\n")
+                    paragraphs = content_text.split("\n")
                     for para in paragraphs:
                         if para.strip():
-                            # Escape HTML characters for ReportLab
                             clean_para = para.strip().replace('<', '&lt;').replace('>', '&gt;')
                             content.append(Paragraph(clean_para, normal_style))
                     
@@ -604,8 +618,7 @@ def display_tablet_names(tablet_names_text):
     # Try to parse the tablet names into a list
     tablet_names = []
     
-    # Split by common delimiters (Note: The new prompt aims to minimize separators, relying on line breaks)
-    # This robust parser will handle any residual commas/line breaks/bullets
+    # Split by common delimiters (relying mostly on line breaks/commas from AI)
     delimiters = ['\n', ',', ';', '•', '-']
     found_delimiter = False
     
@@ -656,6 +669,8 @@ def display_interaction_analysis(interaction_text):
         st.markdown(f'<div class="interaction-moderate">⚠️ <strong>MODERATE INTERACTION</strong></div>', unsafe_allow_html=True)
     elif "minor" in interaction_text.lower():
         st.markdown(f'<div class="interaction-minor">ℹ️ <strong>MINOR INTERACTION</strong></div>', unsafe_allow_html=True)
+    elif "i cannot perform" in interaction_text.lower() or "double-check the spelling" in interaction_text.lower():
+        st.markdown(f'<div class="interaction-warning">⚠️ <strong>INTERACTION CHECK INCOMPLETE</strong></div>', unsafe_allow_html=True)
     else:
         st.markdown(f'<div class="interaction-low">✅ <strong>LOW INTERACTION RISK</strong></div>', unsafe_allow_html=True)
 
@@ -744,15 +759,18 @@ def main():
                             st.session_state.analysis_results = extracted_info
                             st.session_state.original_image = uploaded_file.getvalue()
                             
-                            # Extract drug composition for interaction analysis
-                            composition_match = re.search(r"\*Composition:\*(.*?)(?=\*[\w\s]+:\*|$)", extracted_info, re.DOTALL | re.IGNORECASE)
+                            # START OF NEW PARSING LOGIC (Using the new '|||' separator)
+                            # Find Composition immediately for dependency fix
+                            composition_match = re.search(r"Composition:\s*(.*?)(?=\s*\|\|\||$)", extracted_info, re.DOTALL | re.IGNORECASE)
                             if composition_match:
                                 st.session_state.drug_composition = composition_match.group(1).strip()
-                            
+                            else:
+                                st.session_state.drug_composition = "Unknown composition (Extraction failed)"
+
                             # Analyze drug interactions if additional medications provided
                             if additional_meds.strip():
                                 interaction_result = analyze_drug_interactions(
-                                    st.session_state.drug_composition or "Unknown composition",
+                                    st.session_state.drug_composition, # Use the extracted composition
                                     additional_meds
                                 )
                                 st.session_state.interaction_analysis = interaction_result
@@ -774,71 +792,61 @@ def main():
         
         # Display results if available
         if st.session_state.analysis_results:
-            # Parse and display results
             analysis_text = st.session_state.analysis_results
             
-            # Enhanced sections list with proper organization
-            sections = [
-                ("Composition", "🧬", "composition"),
-                ("Uses", "🎯", "uses"), 
-                ("Available Tablet Names", "💊", "tablet_names"),
-                ("How to Use", "📋", "usage"),
-                ("Side Effects", "⚠️", "side_effects"),
-                ("Cost", "💰", "cost"),
-                ("Safety with Alcohol", "🍺", "safety"),
-                ("Pregnancy Safety", "🤱", "safety"),
-                ("Breastfeeding Safety", "🍼", "safety"),
-                ("Driving Safety", "🚗", "safety"),
-                ("General Safety Advice", "🛡️", "safety")
-            ]
+            # Use a dictionary to map the new plain-text titles to the display icons/names
+            display_map = {
+                "Composition": ("🧬", "Composition", "composition"),
+                "Uses": ("🎯", "Uses", "uses"),
+                "Available Tablet Names": ("💊", "Available Tablet Names", "tablet_names"),
+                "How to Use": ("📋", "How to Use", "usage"),
+                "Side Effects": ("⚠️", "Side Effects", "side_effects"),
+                "Cost": ("💰", "Cost", "cost"),
+                "Safety with Alcohol": ("🍺", "Safety with Alcohol", "safety"),
+                "Pregnancy Safety": ("🤱", "Pregnancy Safety", "safety"),
+                "Breastfeeding Safety": ("🍼", "Breastfeeding Safety", "safety"),
+                "Driving Safety": ("🚗", "Driving Safety", "safety"),
+                "General Safety Advice": ("🛡️", "General Safety Advice", "safety")
+            }
             
-            for section_name, icon, section_type in sections:
-                # Pattern to match sections
-                pattern = rf"\*{re.escape(section_name)}:\*(.*?)(?=\*(?:{'|'.join(re.escape(s[0]) for s in sections)}):\*|$)"
-                match = re.search(pattern, analysis_text, re.DOTALL | re.IGNORECASE)
-                
-                if match:
-                    content = match.group(1).strip()
+            # Split the entire response based on the radical separator '|||'
+            sections = analysis_text.strip().split('|||')
+            
+            for section in sections:
+                if ':' in section:
+                    raw_title, content = section.split(':', 1)
+                    raw_title = raw_title.strip()
+                    content = content.strip()
                     
-                    # Create result card for each section
-                    st.markdown(f'<div class="result-card">', unsafe_allow_html=True)
-                    st.markdown(f'<div class="result-header">{icon} {section_name}</div>', unsafe_allow_html=True)
-                    st.markdown(f'<div class="result-content">', unsafe_allow_html=True)
-                    
-                    # Special handling for different section types
-                    if section_type == "tablet_names":
-                        display_tablet_names(content)
-                    elif section_type == "safety":
-                        display_safety_info(content, section_name)
-                    elif section_type == "composition":
-                        st.markdown(f"**{content}**")
-                    elif section_type == "uses":
-                        # Format uses as bullet points if multiple
-                        # Using ',' or '\n' to split, relying on the agent to NOT use external list markers
-                        if '\n' in content or ',' in content or '•' in content:
-                            uses_list = content.replace('\n', ', ').split(',')
-                            for use in uses_list:
-                                if use.strip():
-                                    st.markdown(f"• {use.strip().strip('•').strip()}") # Strip any remaining external markers for safety
+                    if raw_title in display_map:
+                        icon, display_name, section_type = display_map[raw_title]
+                        
+                        st.markdown(f'<div class="result-card">', unsafe_allow_html=True)
+                        st.markdown(f'<div class="result-header">{icon} {display_name}</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="result-content">', unsafe_allow_html=True)
+                        
+                        # Process multi-line content (relying on line breaks only)
+                        if section_type in ["uses", "side_effects"]:
+                            # Split by line breaks, and manually add bullet points for display
+                            points = [p.strip() for p in content.split('\n') if p.strip()]
+                            for point in points:
+                                if section_type == "uses":
+                                    st.markdown(f"• {point}")
+                                else:
+                                    st.markdown(f"⚠️ {point}")
+                        elif section_type == "cost":
+                            st.markdown(f"💰 **{content}**")
+                        elif section_type == "composition":
+                            st.markdown(f"**{content}**")
+                        elif section_type == "tablet_names":
+                            display_tablet_names(content)
+                        elif section_type == "safety":
+                            display_safety_info(content, display_name)
                         else:
                             st.markdown(content)
-                    elif section_type == "side_effects":
-                        # Format side effects with warning styling
-                        if '\n' in content or ',' in content or '•' in content:
-                            effects_list = content.replace('\n', ', ').split(',')
-                            for effect in effects_list:
-                                if effect.strip():
-                                    st.markdown(f"⚠️ {effect.strip().strip('•').strip()}")
-                        else:
-                            st.markdown(f"⚠️ {content}")
-                    elif section_type == "cost":
-                        # Highlight cost information
-                        st.markdown(f"💰 **{content}**")
-                    else:
-                        st.markdown(content)
-                    
-                    st.markdown('</div>', unsafe_allow_html=True)
-                    st.markdown('</div>', unsafe_allow_html=True)
+                        
+                        st.markdown('</div>', unsafe_allow_html=True)
+                        st.markdown('</div>', unsafe_allow_html=True)
             
             # Display drug interaction analysis if available
             if st.session_state.interaction_analysis:
@@ -905,7 +913,7 @@ def main():
             </div>
             """, unsafe_allow_html=True)
     
-    # Additional Safety Information Section
+    # Additional Safety Information Section (Conditional Display)
     if st.session_state.analysis_results:
         st.markdown("---")
         st.markdown('<div class="section-header">🛡️ Important Safety Guidelines</div>', unsafe_allow_html=True)
@@ -958,7 +966,7 @@ def main():
             </div>
             """, unsafe_allow_html=True)
     
-    # Key Features Section
+    # Key Features Section (Conditional Display)
     if not st.session_state.analysis_results:
         st.markdown("---")
         st.markdown('<div class="section-header">✨ Key Features</div>', unsafe_allow_html=True)
