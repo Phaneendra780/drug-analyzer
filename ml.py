@@ -324,8 +324,8 @@ INSTRUCTIONS = """
 - Provide comprehensive safety information including alcohol interactions, pregnancy safety, breastfeeding considerations, and driving safety.
 - Return all information in a structured format:
   *Composition:* <composition>
+  *Uses:* <accurate uses based on online sources>  <-- MOVED UP FOR PRIORITY
   *Available Tablet Names:* <list of brand names and generic names that contain this composition>
-  *Uses:* <accurate uses based on online sources>
   *How to Use:* <detailed dosage instructions, timing, with or without food>
   *Side Effects:* <verified side effects>
   *Cost:* <actual cost from trusted sources>
@@ -769,8 +769,8 @@ def main():
             # Enhanced sections list with proper organization
             sections = [
                 ("Composition", "🧬", "composition"),
+                ("Uses", "🎯", "uses"), # MOVED UP IN SECTIONS LIST FOR DISPLAY
                 ("Available Tablet Names", "💊", "tablet_names"),
-                ("Uses", "🎯", "uses"),
                 ("How to Use", "📋", "usage"),
                 ("Side Effects", "⚠️", "side_effects"),
                 ("Cost", "💰", "cost"),
