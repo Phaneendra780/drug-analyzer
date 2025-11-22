@@ -354,7 +354,7 @@ Be thorough and prioritize patient safety in your analysis.
 def get_agent():
     """Initialize and cache the AI agent."""
     try:
-        # 🟢 FIX APPLIED: Changed to the stable, higher-limit model
+        # FIX APPLIED: Changed to the stable, higher-limit model
         return Agent(
             model=Gemini(id="gemini-2.5-flash", api_key=GOOGLE_API_KEY),
             system_prompt=SYSTEM_PROMPT,
@@ -370,7 +370,7 @@ def get_agent():
 def get_interaction_agent():
     """Initialize and cache the drug interaction agent."""
     try:
-        # 🟢 FIX APPLIED: Changed to the stable, higher-limit model
+        # FIX APPLIED: Changed to the stable, higher-limit model
         return Agent(
             model=Gemini(id="gemini-2.5-flash", api_key=GOOGLE_API_KEY),
             system_prompt=DRUG_INTERACTION_PROMPT,
@@ -414,7 +414,6 @@ def extract_composition_and_details(image_path):
             )
             return response.content.strip()
     except Exception as e:
-        # The previous free_tier error should now be handled by the paid tier limits.
         st.error(f"🚨 Error extracting composition and details: {e}")
         return None
 
@@ -878,3 +877,118 @@ def main():
                 <div class="result-header">📋 Ready for Analysis</div>
                 <div class="result-content">
                     Upload a tablet image and click 'Analyze Tablet & Check Safety' to see comprehensive results here.
+                    <br><br>
+                    <strong>What you'll get:</strong>
+                    <ul>
+                        <li>🧬 Drug composition identification</li>
+                        <li>💊 Available tablet names and brands</li>
+                        <li>🎯 Medical uses and indications</li>
+                        <li>📋 Proper usage instructions</li>
+                        <li>⚠️ Side effects and precautions</li>
+                        <li>💰 Cost information</li>
+                        <li>🛡️ Comprehensive safety analysis</li>
+                        <li>🔍 Drug interaction checking</li>
+                    </ul>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Additional Safety Information Section
+    if st.session_state.analysis_results:
+        st.markdown("---")
+        st.markdown('<div class="section-header">🛡️ Important Safety Guidelines</div>', unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            <div class="info-card">
+                <h4>🍺 Alcohol Interactions</h4>
+                <ul>
+                    <li>Check the specific alcohol interaction information above</li>
+                    <li>Some medications can cause severe reactions with alcohol</li>
+                    <li>Always consult your doctor about alcohol consumption</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div class="info-card">
+                <h4>🤱 Pregnancy & Breastfeeding</h4>
+                <ul>
+                    <li>Medication safety varies by trimester</li>
+                    <li>Many drugs can pass through breast milk</li>
+                    <li>Always inform healthcare providers about pregnancy/breastfeeding</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown("""
+            <div class="info-card">
+                <h4>🚗 Driving Safety</h4>
+                <ul>
+                    <li>Some medications cause drowsiness or dizziness</li>
+                    <li>Check the driving safety information above</li>
+                    <li>Avoid driving if you feel impaired</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.markdown("""
+            <div class="info-card">
+                <h4>💊 Drug Interactions</h4>
+                <ul>
+                    <li>Always provide complete medication list to doctors</li>
+                    <li>Include over-the-counter drugs and supplements</li>
+                    <li>Check for interactions before starting new medications</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Key Features Section
+    if not st.session_state.analysis_results:
+        st.markdown("---")
+        st.markdown('<div class="section-header">✨ Key Features</div>', unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("""
+            <div class="metric-card">
+                <div class="metric-value">🔬</div>
+                <div class="metric-label">AI-Powered Analysis</div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown("Advanced image recognition technology for accurate drug identification")
+        
+        with col2:
+            st.markdown("""
+            <div class="metric-card">
+                <div class="metric-value">🛡️</div>
+                <div class="metric-label">Safety First</div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown("Comprehensive safety analysis including interactions and contraindications")
+        
+        with col3:
+            st.markdown("""
+            <div class="metric-card">
+                <div class="metric-value">📊</div>
+                <div class="metric-label">Detailed Reports</div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown("Complete analysis with downloadable PDF reports for your records")
+    
+    # Footer
+    st.markdown("---")
+    st.markdown("""
+    <div style="text-align: center; padding: 20px; color: #666; font-size: 0.9rem;">
+        <p><strong>© 2025 MediScan - Comprehensive Drug Analyzer</strong></p>
+        <p>Powered by Gemini AI + Tavily | Built with ❤️ for Healthcare</p>
+        <p><em>Always consult healthcare professionals for medical advice</em></p>
+    </div>
+    """, unsafe_allow_html=True)
+
+if __name__ == "__main__":
+    main()
