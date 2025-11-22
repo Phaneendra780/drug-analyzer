@@ -309,27 +309,30 @@ if not TAVILY_API_KEY or not GOOGLE_API_KEY:
 
 MAX_IMAGE_WIDTH = 300
 
+# START OF CRITICAL CHANGE: SYSTEM PROMPT REFINEMENT
 SYSTEM_PROMPT = """
 You are an expert in pharmaceutical analysis and AI-driven drug composition recognition with specialized knowledge in drug safety and interactions.
-Your role is to analyze a tablet's composition from an image, identify its ingredients, and provide comprehensive insights about the drug including safety considerations.
+Your role is to analyze a tablet's composition from an image, identify its ingredients, and provide comprehensive insights about the drug.
+
+CRITICAL VOICE INSTRUCTION: Strictly adopt the voice of an authoritative, neutral pharmaceutical reference text. Never use promotional language (e.g., 'the manufacturer recommends', 'improves overall health') or vague, marketing-driven claims. Focus on clinical indications and verified medical facts.
 
 Additionally, once a drug composition is identified, retrieve and display its uses, side effects, cost, available tablet names/brands, usage instructions, and critical safety information using reliable medical sources.
 Ensure that you fetch accurate and specific details instead of generic placeholders.
 """
 
-# START OF CRITICAL CHANGE: REVISED INSTRUCTIONS FOR STRUCTURE AND CONTENT
+# START OF CRITICAL CHANGE: INSTRUCTIONS REFINEMENT
 INSTRUCTIONS = """
 - Extract the drug composition from the tablet image.
 - Use this composition to fetch and return detailed, medically accurate information from trusted sources.
-- **CRITICAL FORMATTING:** Return ALL information in a strict key-value format using asterisks. Do NOT use bullet points, numbered lists, or fragmented text outside of the section content.
-- **CRITICAL CONTENT:** Provide only medical/scientific uses and avoid manufacturer promotional language.
+
+- **CRITICAL FORMATTING:** Return ALL information in a strict key-value format using asterisks. Do NOT use any list markers (hyphens, bullet points, etc.) or fragmented text outside of the section content. Use only standard line breaks for new points within a section.
 
 - Return all information in this exact structured format:
   *Composition:* <composition>
-  *Uses:* <accurate medical/scientific uses based on online sources>
+  *Uses:* <accurate medical/scientific uses based on clinical indications>
   *Available Tablet Names:* <list of brand names and generic names that contain this composition>
-  *How to Use:* <detailed dosage instructions, timing, with or without food>
-  *Side Effects:* <verified side effects>
+  *How to Use:* <detailed dosage instructions, timing, with or without food. If conflicting dosages are found, state the lowest medically accepted dose first, and add a CRITICAL DISCLAIMER to follow the specific dose listed on the tablet packaging.>
+  *Side Effects:* <verified side effects, categorized by severity if possible>
   *Cost:* <actual cost from trusted sources>
   *Safety with Alcohol:* <specific advice about alcohol consumption>
   *Pregnancy Safety:* <pregnancy category and safety advice>
@@ -601,15 +604,20 @@ def display_tablet_names(tablet_names_text):
     # Try to parse the tablet names into a list
     tablet_names = []
     
-    # Split by common delimiters
-    for delimiter in ['\n', ',', ';', '•', '-']:
+    # Split by common delimiters (Note: The new prompt aims to minimize separators, relying on line breaks)
+    # This robust parser will handle any residual commas/line breaks/bullets
+    delimiters = ['\n', ',', ';', '•', '-']
+    found_delimiter = False
+    
+    for delimiter in delimiters:
         if delimiter in tablet_names_text:
             names = tablet_names_text.split(delimiter)
             tablet_names = [name.strip() for name in names if name.strip()]
+            found_delimiter = True
             break
     
     # If no delimiters found, treat as single text
-    if not tablet_names:
+    if not found_delimiter:
         tablet_names = [tablet_names_text.strip()]
     
     # Display tablet names with custom styling
@@ -806,20 +814,21 @@ def main():
                         st.markdown(f"**{content}**")
                     elif section_type == "uses":
                         # Format uses as bullet points if multiple
-                        if '\n' in content or ',' in content or '•' in content: # Added '•' check for robustness
+                        # Using ',' or '\n' to split, relying on the agent to NOT use external list markers
+                        if '\n' in content or ',' in content or '•' in content:
                             uses_list = content.replace('\n', ', ').split(',')
                             for use in uses_list:
                                 if use.strip():
-                                    st.markdown(f"• {use.strip()}")
+                                    st.markdown(f"• {use.strip().strip('•').strip()}") # Strip any remaining external markers for safety
                         else:
                             st.markdown(content)
                     elif section_type == "side_effects":
                         # Format side effects with warning styling
-                        if '\n' in content or ',' in content or '•' in content: # Added '•' check for robustness
+                        if '\n' in content or ',' in content or '•' in content:
                             effects_list = content.replace('\n', ', ').split(',')
                             for effect in effects_list:
                                 if effect.strip():
-                                    st.markdown(f"⚠️ {effect.strip()}")
+                                    st.markdown(f"⚠️ {effect.strip().strip('•').strip()}")
                         else:
                             st.markdown(f"⚠️ {content}")
                     elif section_type == "cost":
