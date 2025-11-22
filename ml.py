@@ -326,6 +326,7 @@ INSTRUCTIONS = """
 - Use this composition to fetch and return detailed, medically accurate information from trusted sources.
 
 - **RADICAL FORMATTING ENFORCEMENT:** You MUST separate each section with a new line containing ONLY '|||'. Do NOT use asterisks (*) for section headers. Do NOT use any list markers (hyphens, bullet points, asterisks, etc.). Use only standard line breaks for new points within a section.
+- **FAILURE MODE:** If you cannot find accurate information for a section, you must state that fact clearly within the content (e.g., 'The exact cost is not publicly available.'), but you must still output the section header and the '|||' separator.
 
 - Return all information in this exact structured format:
 Composition: <composition>
@@ -761,6 +762,7 @@ def main():
                             
                             # START OF NEW PARSING LOGIC (Using the new '|||' separator)
                             # Find Composition immediately for dependency fix
+                            # This regex is robust for the new structure
                             composition_match = re.search(r"Composition:\s*(.*?)(?=\s*\|\|\||$)", extracted_info, re.DOTALL | re.IGNORECASE)
                             if composition_match:
                                 st.session_state.drug_composition = composition_match.group(1).strip()
@@ -828,6 +830,7 @@ def main():
                         # Process multi-line content (relying on line breaks only)
                         if section_type in ["uses", "side_effects"]:
                             # Split by line breaks, and manually add bullet points for display
+                            # This handles content from the AI that might be multi-line
                             points = [p.strip() for p in content.split('\n') if p.strip()]
                             for point in points:
                                 if section_type == "uses":
